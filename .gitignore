@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Local config
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Snowflake project artifacts
+/backup/
+/data/*.json
+/data/*.zip
+/data/gudid_delimited/
+
+# Editor
+.vscode/
