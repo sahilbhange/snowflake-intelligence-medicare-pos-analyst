@@ -14,19 +14,19 @@ A compact demo project that showcases Snowflake Intelligence with a real healthc
 
 ## Quickstart
 
-Optional: run everything with a single command after setting your SnowSQL connection:
+Optional: run everything with a single command after setting your Snow CLI connection:
 
 ```bash
-# Example: export SNOWSQL_OPTS="-a <account> -u <user> --private-key-path <path>"
+# Example: export PRIVATE_KEY_PASSPHRASE="<your passphrase>"
 make demo
 ```
 
-The Makefile assumes you already edited the `PUT` paths in `scripts/step_3_data_load.sql`.
+The Makefile assumes you already edited the `PUT` paths in `sql/ingestion/load_raw_data.sql`.
 
 1. Create roles, warehouse, database, and schema:
 
 ```sql
--- scripts/step_1_user_setup.sql
+-- sql/setup/setup_user_and_roles.sql
 ```
 
 Update `target_user` before running.
@@ -41,7 +41,7 @@ bash data/data_download.sh
 3. Upload raw files to Snowflake stages:
 
 ```sql
--- scripts/step_3_data_load.sql
+-- sql/ingestion/load_raw_data.sql
 ```
 
 Replace the file paths in the `PUT` statements.
@@ -49,7 +49,7 @@ Replace the file paths in the `PUT` statements.
 4. Build the curated tables and views:
 
 ```sql
--- scripts/step_4_data_model.sql
+-- sql/transform/build_curated_model.sql
 ```
 
 5. Create Cortex Search services:
@@ -67,12 +67,18 @@ Replace the file paths in the `PUT` statements.
 -- models/eval_seed.sql
 ```
 
-7. Upload the semantic model:
+7. Create metadata and quality scaffolding (optional but recommended):
+
+```sql
+-- sql/governance/metadata_and_quality.sql
+```
+
+8. Upload the semantic model:
 
 - File: `models/DMEPOS_SEMANTIC_MODEL.yaml`
 - Target: `MEDICARE_POS_DB.ANALYTICS`
 
-8. Add sources in Snowflake Intelligence:
+9. Add sources in Snowflake Intelligence:
 
 - Follow `models/snowflake_intelligence_setup.md`.
 
@@ -85,7 +91,7 @@ Replace the file paths in the `PUT` statements.
 
 ## Repository layout
 
-- `scripts/` - One-time setup and data load scripts.
+- `sql/` - Setup, ingestion, transform, search, governance, and intelligence SQL.
 - `models/` - Semantic model, Cortex Search SQL, and instrumentation.
 - `data/` - Download helpers (raw data is gitignored).
 - `docs/` - Diagrams and visuals for articles.
@@ -97,3 +103,5 @@ Replace the file paths in the `PUT` statements.
 - `docs/architecture.md` - Architecture outline and story alignment.
 - `docs/project_overview.md` - Datasets, model grain, and Analyst + Search flow.
 - `docs/data_model.md` - Mermaid data model diagram.
+- `docs/medium_article_draft.md` - Medium article outline and talking points.
+- `refine_plan.md` - Agentic refinement plan and next steps.

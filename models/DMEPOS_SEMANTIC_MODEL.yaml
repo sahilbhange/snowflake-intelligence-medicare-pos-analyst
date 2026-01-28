@@ -1,5 +1,9 @@
 name: DMEPOS_SEMANTIC_MODEL
-description: Semantic model for Medicare DMEPOS claims (provider + HCPCS grain) with additional filters, derived metrics, and verified queries.
+description: |
+  Medicare DMEPOS Claims Semantic Model (v1.1.0)
+
+  Analyzes Medicare Durable Medical Equipment, Prosthetics, Orthotics, and Supplies (DMEPOS)
+  claims data at the provider + HCPCS code grain.
 tables:
   - name: DIM_PROVIDER
     base_table:
@@ -79,13 +83,6 @@ tables:
       schema: ANALYTICS
       table: FACT_DMEPOS_CLAIMS
     dimensions:
-      - name: REFERRING_NPI
-        synonyms:
-          - npi
-          - supplier_npi
-        description: Referring provider NPI
-        expr: fact_claims.referring_npi
-        data_type: NUMBER(38,0)
       - name: HCPCS_CODE
         synonyms:
           - billing code
@@ -112,6 +109,13 @@ tables:
         description: RBCS category id
         expr: fact_claims.rbcs_id
         data_type: VARCHAR(16777216)
+      - name: REFERRING_NPI
+        synonyms:
+          - npi
+          - supplier_npi
+        description: Referring provider NPI
+        expr: fact_claims.referring_npi
+        data_type: NUMBER(38,0)
       - name: SUPPLIER_RENTAL_INDICATOR
         synonyms:
           - is rental

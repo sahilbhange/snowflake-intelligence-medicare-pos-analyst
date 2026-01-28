@@ -14,5 +14,13 @@ __pycache__/
 /data/*.zip
 /data/gudid_delimited/
 
-# Editor
+# Editor    
 .vscode/
+todo.md
+learning/*
+CLAUDE.md
+AGENTS.md
+medium/*
+.claudeignore
+scratch/schema_migration.sql
+scratch/validate.sql

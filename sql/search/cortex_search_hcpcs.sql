@@ -2,10 +2,10 @@
 
 use role MEDICARE_POS_INTELLIGENCE;
 use database MEDICARE_POS_DB;
-use schema ANALYTICS;
+use schema SEARCH;
 
 -- 1) Build the HCPCS search corpus
-create or replace table ANALYTICS.HCPCS_SEARCH_DOCS as
+create or replace table SEARCH.HCPCS_SEARCH_DOCS as
 select distinct
   hcpcs_code as doc_id,
   'hcpcs_definition' as doc_type,
@@ -28,12 +28,12 @@ select distinct
   hcpcs_description,
   rbcs_id,
   supplier_rental_indicator
-from MEDICARE_POS_DB.ANALYTICS.FACT_DMEPOS_CLAIMS
+from ANALYTICS.FACT_DMEPOS_CLAIMS
 where hcpcs_code is not null
   and hcpcs_description is not null;
 
 -- 2) Create the Cortex Search service
-create or replace cortex search service ANALYTICS.HCPCS_SEARCH_SVC
+create or replace cortex search service SEARCH.HCPCS_SEARCH_SVC
   on body
   attributes doc_id, doc_type, hcpcs_code, hcpcs_description, rbcs_id
   warehouse = MEDICARE_POS_WH
@@ -46,9 +46,9 @@ as (
     hcpcs_code,
     hcpcs_description,
     rbcs_id
-  from ANALYTICS.HCPCS_SEARCH_DOCS
+  from SEARCH.HCPCS_SEARCH_DOCS
 );
 
 -- 3) Optional access grant
--- grant usage on cortex search service MEDICARE_POS_DB.ANALYTICS.HCPCS_SEARCH_SVC
+-- grant usage on cortex search service MEDICARE_POS_DB.SEARCH.HCPCS_SEARCH_SVC
 --   to role MEDICARE_POS_INTELLIGENCE;

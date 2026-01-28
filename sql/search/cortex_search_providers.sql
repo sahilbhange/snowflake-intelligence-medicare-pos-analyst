@@ -2,10 +2,10 @@
 
 use role MEDICARE_POS_INTELLIGENCE;
 use database MEDICARE_POS_DB;
-use schema ANALYTICS;
+use schema SEARCH;
 
 -- 1) Build the provider search corpus
-create or replace table ANALYTICS.PROVIDER_SEARCH_DOCS as
+create or replace table SEARCH.PROVIDER_SEARCH_DOCS as
 select
   referring_npi as doc_id,
   'provider_profile' as doc_type,
@@ -40,11 +40,11 @@ select
   provider_state,
   provider_zip,
   provider_country
-from MEDICARE_POS_DB.ANALYTICS.DIM_PROVIDER
+from ANALYTICS.DIM_PROVIDER
 where referring_npi is not null;
 
 -- 2) Create the Cortex Search service
-create or replace cortex search service ANALYTICS.PROVIDER_SEARCH_SVC
+create or replace cortex search service SEARCH.PROVIDER_SEARCH_SVC
   on body
   attributes doc_id, doc_type, referring_npi, provider_specialty_desc, provider_city, provider_state
   warehouse = MEDICARE_POS_WH
@@ -58,9 +58,9 @@ as (
     provider_specialty_desc,
     provider_city,
     provider_state
-  from ANALYTICS.PROVIDER_SEARCH_DOCS
+  from SEARCH.PROVIDER_SEARCH_DOCS
 );
 
 -- 3) Optional access grant
--- grant usage on cortex search service MEDICARE_POS_DB.ANALYTICS.PROVIDER_SEARCH_SVC
+-- grant usage on cortex search service MEDICARE_POS_DB.SEARCH.PROVIDER_SEARCH_SVC
 --   to role MEDICARE_POS_INTELLIGENCE;

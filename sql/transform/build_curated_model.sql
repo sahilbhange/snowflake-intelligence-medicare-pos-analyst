@@ -1,11 +1,32 @@
+-- ============================================================================
+-- Data Model Build: Curated & Analytics Layer (Medallion Architecture)
+-- ============================================================================
+--
+-- LEARN ABOUT THIS:
+--   📖 Medallion concept deep-dive: medium/claude/subarticle_2_foundation_layer.md#medallion-architecture
+--   📚 Reference architecture: docs/implementation/data_model.md
+--   📚 Getting started: docs/implementation/getting-started.md
+--
+-- ============================================================================
+-- BEFORE RUNNING:
+-- 1. Run sql/ingestion/load_raw_data.sql (creates RAW layer)
+-- 2. Ensure MEDICARE_POS_DB exists with CURATED and ANALYTICS schemas
+--
+-- ============================================================================
+
 -- Data model build: curate claims + device tables into views for analytics.
 
 use role MEDICARE_POS_INTELLIGENCE;
 use database MEDICARE_POS_DB;
-use schema ANALYTICS;
+
+-- ============================================================================
+-- CURATED LAYER (Silver)
+-- ============================================================================
+
+use schema CURATED;
 
 -- 1) Curated claims table
-create or replace table ANALYTICS.DMEPOS_CLAIMS (
+create or replace table CURATED.DMEPOS_CLAIMS (
   referring_npi number,
   provider_last_name string,
   provider_first_name string,
@@ -32,7 +53,7 @@ create or replace table ANALYTICS.DMEPOS_CLAIMS (
   avg_supplier_medicare_standard number(38,4)
 );
 
-insert overwrite into ANALYTICS.DMEPOS_CLAIMS
+insert overwrite into CURATED.DMEPOS_CLAIMS
 select
   try_to_number(v:"Rfrg_NPI"::string) as referring_npi,
   v:"Rfrg_Prvdr_Last_Name_Org"::string as provider_last_name,
@@ -58,10 +79,10 @@ select
   try_to_decimal(v:"Avg_Suplr_Mdcr_Alowd_Amt"::string, 38, 4) as avg_supplier_medicare_allowed,
   try_to_decimal(v:"Avg_Suplr_Mdcr_Pymt_Amt"::string, 38, 4) as avg_supplier_medicare_payment,
   try_to_decimal(v:"Avg_Suplr_Mdcr_Stdzd_Amt"::string, 38, 4) as avg_supplier_medicare_standard
-from ANALYTICS.RAW_DMEPOS;
+from RAW.RAW_DMEPOS;
 
 -- 2) Curated device table
-create or replace table ANALYTICS.GUDID_DEVICES (
+create or replace table CURATED.GUDID_DEVICES (
   public_device_record_key string,
   public_version_status string,
   public_version_number number,
@@ -77,7 +98,7 @@ create or replace table ANALYTICS.GUDID_DEVICES (
   commercial_distribution_status string
 );
 
-insert overwrite into ANALYTICS.GUDID_DEVICES
+insert overwrite into CURATED.GUDID_DEVICES
 select
   public_device_record_key,
   public_version_status,
@@ -92,7 +113,13 @@ select
   device_record_status as device_status,
   try_to_date(device_publish_date),
   device_comm_distribution_status
-from ANALYTICS.RAW_GUDID_DEVICE;
+from RAW.RAW_GUDID_DEVICE;
+
+-- ============================================================================
+-- ANALYTICS LAYER (Gold)
+-- ============================================================================
+
+use schema ANALYTICS;
 
 -- 3) Analytics views
 create or replace view ANALYTICS.DIM_PROVIDER as
@@ -107,7 +134,7 @@ select distinct
   provider_specialty_code,
   provider_specialty_desc,
   provider_specialty_source
-from ANALYTICS.DMEPOS_CLAIMS
+from CURATED.DMEPOS_CLAIMS
 where referring_npi is not null;
 
 create or replace view ANALYTICS.DIM_DEVICE as
@@ -124,14 +151,14 @@ select distinct
   device_status,
   device_publish_date,
   commercial_distribution_status
-from ANALYTICS.GUDID_DEVICES;
+from CURATED.GUDID_DEVICES;
 
 create or replace view ANALYTICS.DIM_PRODUCT_CODE as
 select distinct
   primary_di,
   product_code,
   product_code_name
-from ANALYTICS.RAW_GUDID_PRODUCT_CODES
+from RAW.RAW_GUDID_PRODUCT_CODES
 where product_code is not null;
 
 create or replace view ANALYTICS.FACT_DMEPOS_CLAIMS as
@@ -139,12 +166,12 @@ select
   f.*,
   p.provider_specialty_desc as provider_specialty_desc_ref,
   d.brand_name as device_brand_name
-from ANALYTICS.DMEPOS_CLAIMS f
+from CURATED.DMEPOS_CLAIMS f
   left join ANALYTICS.DIM_PROVIDER p
     on f.referring_npi = p.referring_npi
   left join ANALYTICS.DIM_DEVICE d
     on f.hcpcs_code = d.di_number;
 
 -- Optional checks
--- select count(*) from ANALYTICS.DMEPOS_CLAIMS;
--- select count(*) from ANALYTICS.GUDID_DEVICES;
+-- select count(*) from CURATED.DMEPOS_CLAIMS;
+-- select count(*) from CURATED.GUDID_DEVICES;

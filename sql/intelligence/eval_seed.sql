@@ -1,10 +1,28 @@
+-- ============================================================================
+-- Evaluation Seed Questions (Golden Test Set)
+-- ============================================================================
+--
+-- LEARN ABOUT THIS:
+--   📖 Evaluation frameworks: medium/claude/subarticle_3_trust_layer.md#evaluation-frameworks
+--   📖 Regression testing concept: medium/claude/subarticle_3_trust_layer.md#running-eval-seeds
+--   📚 Validation guide: docs/governance/human_validation_log.md
+--   🚀 Getting started: docs/implementation/getting-started.md
+--
+-- ============================================================================
+-- PURPOSE:
+-- Provides curated set of "golden questions" with expected SQL patterns.
+-- Used for nightly regression testing after semantic model updates.
+-- Ensures AI-generated answers remain accurate across versions.
+--
+-- ============================================================================
+
 -- Seed eval prompts for Analyst regression testing.
 
 use role MEDICARE_POS_INTELLIGENCE;
 use database MEDICARE_POS_DB;
-use schema ANALYTICS;
+use schema INTELLIGENCE;
 
-insert into ANALYTICS.ANALYST_EVAL_SET (eval_id, category, question, expected_pattern, notes)
+insert into INTELLIGENCE.ANALYST_EVAL_SET (eval_id, category, question, expected_pattern, notes)
 values
   ('Q01', 'provider', 'Top 5 providers by total supplier claims in MD', 'order by total_supplier_claims desc limit 5 where provider_state = ''MD''', null),
   ('Q02', 'provider', 'Providers in CA with highest avg Medicare allowed', 'order by avg_supplier_medicare_allowed desc where provider_state = ''CA''', null),

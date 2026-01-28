@@ -2,10 +2,10 @@
 
 use role MEDICARE_POS_INTELLIGENCE;
 use database MEDICARE_POS_DB;
-use schema ANALYTICS;
+use schema SEARCH;
 
 -- 1) Build the device search corpus
-create or replace table ANALYTICS.DEVICE_SEARCH_DOCS as
+create or replace table SEARCH.DEVICE_SEARCH_DOCS as
 select
   public_device_record_key as doc_id,
   'medical_device' as doc_type,
@@ -21,12 +21,13 @@ select
       else ''
     end
   ) as body,
+  di_number,
   brand_name,
   company_name,
   version_or_model_number,
   catalog_number,
   device_description
-from MEDICARE_POS_DB.ANALYTICS.GUDID_DEVICES
+from CURATED.GUDID_DEVICES
 where (device_description is not null or brand_name is not null)
   and company_name is not null
   and (
@@ -46,9 +47,9 @@ where (device_description is not null or brand_name is not null)
   );
 
 -- 2) Create the Cortex Search service
-create or replace cortex search service ANALYTICS.DEVICE_SEARCH_SVC
+create or replace cortex search service SEARCH.DEVICE_SEARCH_SVC
   on body
-  attributes doc_id, doc_type, brand_name, company_name, version_or_model_number
+  attributes doc_id, doc_type, di_number, brand_name, company_name
   warehouse = MEDICARE_POS_WH
   target_lag = '7 day'
 as (
@@ -56,12 +57,12 @@ as (
     body,
     doc_id,
     doc_type,
+    di_number,
     brand_name,
-    company_name,
-    version_or_model_number
-  from ANALYTICS.DEVICE_SEARCH_DOCS
+    company_name
+  from SEARCH.DEVICE_SEARCH_DOCS
 );
 
 -- 3) Optional access grant
--- grant usage on cortex search service MEDICARE_POS_DB.ANALYTICS.DEVICE_SEARCH_SVC
+-- grant usage on cortex search service MEDICARE_POS_DB.SEARCH.DEVICE_SEARCH_SVC
 --   to role MEDICARE_POS_INTELLIGENCE;
