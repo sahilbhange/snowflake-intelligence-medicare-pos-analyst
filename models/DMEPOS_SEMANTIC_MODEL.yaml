@@ -1,6 +1,6 @@
 name: DMEPOS_SEMANTIC_MODEL
 description: |
-  Medicare DMEPOS Claims Semantic Model (v1.1.0)
+  Medicare DMEPOS Claims Semantic Model (v1.2.0)
 
   Analyzes Medicare Durable Medical Equipment, Prosthetics, Orthotics, and Supplies (DMEPOS)
   claims data at the provider + HCPCS code grain.
@@ -12,34 +12,50 @@ tables:
       table: DIM_PROVIDER
     dimensions:
       - name: PROVIDER_CITY
-        description: Provider city
+        synonyms:
+          - city
+          - practice city
+        description: City where the referring provider's practice is located
         expr: dim_provider.provider_city
         data_type: VARCHAR(16777216)
       - name: PROVIDER_COUNTRY
-        description: Provider country
+        synonyms:
+          - country
+        description: Country where the referring provider's practice is located
         expr: dim_provider.provider_country
         data_type: VARCHAR(16777216)
       - name: PROVIDER_FIRST_NAME
-        description: Provider first name
+        synonyms:
+          - first name
+        description: First name of the referring provider
         expr: dim_provider.provider_first_name
         data_type: VARCHAR(16777216)
       - name: PROVIDER_LAST_NAME
-        description: Provider last name
+        synonyms:
+          - last name
+          - surname
+        description: Last name of the referring provider
         expr: dim_provider.provider_last_name
         data_type: VARCHAR(16777216)
       - name: PROVIDER_NAME
-        description: Provider full name
+        synonyms:
+          - doctor name
+          - provider
+          - referring provider
+        description: Full name of the referring provider (first + last)
         expr: concat_ws(' ', dim_provider.provider_first_name, dim_provider.provider_last_name)
         data_type: VARCHAR(33554433)
       - name: PROVIDER_NPI
         synonyms:
           - npi
           - supplier_npi
-        description: Provider NPI
+        description: National Provider Identifier (NPI) uniquely identifying the referring provider
         expr: dim_provider.referring_npi
         data_type: NUMBER(38,0)
       - name: PROVIDER_SPECIALTY_CODE
-        description: Specialty code
+        synonyms:
+          - specialty code
+        description: CMS specialty code identifying the provider's medical specialty
         expr: dim_provider.provider_specialty_code
         data_type: VARCHAR(16777216)
       - name: PROVIDER_SPECIALTY_DESC
@@ -47,7 +63,7 @@ tables:
           - medical specialty
           - provider specialty
           - specialty
-        description: Specialty description
+        description: Human-readable description of the provider's medical specialty
         expr: dim_provider.provider_specialty_desc
         data_type: VARCHAR(16777216)
         sample_values:
@@ -61,7 +77,7 @@ tables:
           - location
           - provider location
           - state
-        description: Provider state
+        description: US state where the referring provider's practice is located
         expr: dim_provider.provider_state
         data_type: VARCHAR(16777216)
         sample_values:
@@ -71,7 +87,11 @@ tables:
           - FL
           - PA
       - name: PROVIDER_ZIP
-        description: Provider ZIP
+        synonyms:
+          - zip code
+          - postal code
+          - zip
+        description: ZIP code of the referring provider's practice location
         expr: dim_provider.provider_zip
         data_type: VARCHAR(16777216)
     primary_key:
@@ -89,7 +109,7 @@ tables:
           - code
           - hcpcs
           - procedure code
-        description: HCPCS code
+        description: Healthcare Common Procedure Coding System code identifying the billed item or service
         expr: fact_claims.hcpcs_code
         data_type: VARCHAR(16777216)
         sample_values:
@@ -102,18 +122,20 @@ tables:
         synonyms:
           - code description
           - procedure description
-        description: HCPCS description
+        description: Human-readable description of the HCPCS code (item or service name)
         expr: fact_claims.hcpcs_description
         data_type: VARCHAR(16777216)
       - name: RBCS_ID
-        description: RBCS category id
+        synonyms:
+          - betos category
+          - category
+          - equipment category
+          - rbcs
+        description: Restructured BETOS Classification System (RBCS) ID grouping HCPCS codes into clinical categories
         expr: fact_claims.rbcs_id
         data_type: VARCHAR(16777216)
       - name: REFERRING_NPI
-        synonyms:
-          - npi
-          - supplier_npi
-        description: Referring provider NPI
+        description: Referring provider NPI (foreign key to DIM_PROVIDER)
         expr: fact_claims.referring_npi
         data_type: NUMBER(38,0)
       - name: SUPPLIER_RENTAL_INDICATOR
@@ -121,7 +143,7 @@ tables:
           - is rental
           - rental flag
           - rental indicator
-        description: Rental indicator
+        description: Indicates whether the DMEPOS item is a rental (Y) or purchase (N)
         expr: fact_claims.supplier_rental_indicator
         data_type: VARCHAR(16777216)
         sample_values:
@@ -129,109 +151,127 @@ tables:
           - 'N'
     facts:
       - name: AVG_SUPPLIER_MEDICARE_ALLOWED
-        description: Avg Medicare allowed (row-level)
+        description: Average Medicare allowed amount (USD) per provider-HCPCS row. Represents the approved payment amount before patient cost-sharing.
         expr: fact_claims.avg_supplier_medicare_allowed
         data_type: NUMBER(38,4)
+        default_aggregation: avg
         access_modifier: public_access
       - name: AVG_SUPPLIER_MEDICARE_PAYMENT
-        description: Avg Medicare payment (row-level)
+        description: Average Medicare payment amount (USD) per provider-HCPCS row. The actual amount Medicare paid to the supplier.
         expr: fact_claims.avg_supplier_medicare_payment
         data_type: NUMBER(38,4)
+        default_aggregation: avg
         access_modifier: public_access
       - name: AVG_SUPPLIER_MEDICARE_STANDARD
-        description: Avg Medicare standard (row-level)
+        description: Average Medicare standardized allowed amount (USD) per provider-HCPCS row. Removes geographic wage index adjustments for fair cross-region comparison.
         expr: fact_claims.avg_supplier_medicare_standard
         data_type: NUMBER(38,4)
+        default_aggregation: avg
         access_modifier: public_access
       - name: AVG_SUPPLIER_SUBMITTED_CHARGE
-        description: Avg submitted charge (row-level)
+        description: Average amount (USD) billed by the supplier per provider-HCPCS row, before Medicare processing. Typically higher than allowed or payment amounts.
         expr: fact_claims.avg_supplier_submitted_charge
         data_type: NUMBER(38,4)
+        default_aggregation: avg
         access_modifier: public_access
       - name: TOTAL_SUPPLIER_BENES
-        description: Total beneficiaries (row-level)
+        description: Count of distinct Medicare beneficiaries served for this provider-HCPCS combination
         expr: fact_claims.total_supplier_benes
         data_type: NUMBER(38,0)
+        default_aggregation: sum
         access_modifier: public_access
       - name: TOTAL_SUPPLIER_CLAIMS
-        description: Total claims (row-level)
+        description: Count of supplier claims submitted for this provider-HCPCS combination
         expr: fact_claims.total_supplier_claims
         data_type: NUMBER(38,0)
+        default_aggregation: sum
         access_modifier: public_access
       - name: TOTAL_SUPPLIER_SERVICES
-        description: Total services (row-level)
+        description: Count of services rendered across all claims for this provider-HCPCS combination
         expr: fact_claims.total_supplier_services
         data_type: NUMBER(38,0)
+        default_aggregation: sum
         access_modifier: public_access
       - name: TOTAL_SUPPLIERS
-        description: Total suppliers (row-level)
+        description: Count of unique suppliers for this provider-HCPCS combination
         expr: fact_claims.total_suppliers
         data_type: NUMBER(38,0)
+        default_aggregation: sum
         access_modifier: public_access
     filters:
       - name: california_providers
-        description: Providers located in California
-        expr: provider_state = 'CA'
+        description: Providers located in California (requires join to DIM_PROVIDER)
+        expr: dim_provider.provider_state = 'CA'
       - name: common_hcpcs
         description: Focus on commonly occurring HCPCS codes
-        expr: hcpcs_code in ('A4239','E1390','E0431','E1392','E0601')
+        expr: fact_claims.hcpcs_code in ('A4239','E1390','E0431','E1392','E0601')
       - name: durable_medical_equipment
         description: DME codes (E-codes for equipment)
-        expr: hcpcs_code like 'E%'
+        expr: fact_claims.hcpcs_code like 'E%'
       - name: exclude_null_hcpcs
         description: Exclude null HCPCS codes
-        expr: hcpcs_code is not null
+        expr: fact_claims.hcpcs_code is not null
       - name: high_volume_providers
         description: Providers with more than 100 total claims
-        expr: total_supplier_claims > 100
+        expr: fact_claims.total_supplier_claims > 100
       - name: rentals_only
-        description: Rentals only
-        expr: supplier_rental_indicator = 'Y'
+        description: Rental equipment only (excludes purchases)
+        expr: fact_claims.supplier_rental_indicator = 'Y'
       - name: texas_providers
-        description: Providers located in Texas
-        expr: provider_state = 'TX'
+        description: Providers located in Texas (requires join to DIM_PROVIDER)
+        expr: dim_provider.provider_state = 'TX'
       - name: top_states
-        description: Focus on states with highest claim volume (TX, CA, NY, FL, PA)
-        expr: provider_state in ('TX', 'CA', 'NY', 'FL', 'PA')
+        description: Focus on states with highest claim volume - TX, CA, NY, FL, PA (requires join to DIM_PROVIDER)
+        expr: dim_provider.provider_state in ('TX', 'CA', 'NY', 'FL', 'PA')
     metrics:
       - name: ALLOWED_PER_CLAIM
-        description: Allowed amount per claim
+        description: Medicare allowed amount (USD) divided by total claims. Measures average approved amount per claim.
         expr: sum(fact_claims.avg_supplier_medicare_allowed) / nullif(sum(fact_claims.total_supplier_claims), 0)
         access_modifier: public_access
       - name: ALLOWED_PER_SERVICE
-        description: Allowed amount per service
+        description: Medicare allowed amount (USD) divided by total services. Measures average approved amount per individual service.
         expr: sum(fact_claims.avg_supplier_medicare_allowed) / nullif(sum(fact_claims.total_supplier_services), 0)
         access_modifier: public_access
       - name: AVG_MEDICARE_ALLOWED
-        description: Average Medicare allowed
+        description: Average Medicare allowed amount (USD). The approved payment before patient cost-sharing.
         expr: avg(fact_claims.avg_supplier_medicare_allowed)
         access_modifier: public_access
       - name: AVG_MEDICARE_PAYMENT
-        description: Average Medicare payment
+        description: Average Medicare payment amount (USD). The actual amount Medicare paid to suppliers.
         expr: avg(fact_claims.avg_supplier_medicare_payment)
         access_modifier: public_access
       - name: AVG_MEDICARE_STANDARD
-        description: Average Medicare standard
+        synonyms:
+          - standardized amount
+          - standardized allowed
+        description: Average Medicare standardized allowed amount (USD). Removes geographic wage index adjustments for fair cross-region comparison.
         expr: avg(fact_claims.avg_supplier_medicare_standard)
         access_modifier: public_access
       - name: AVG_SUBMITTED_CHARGE
-        description: Average submitted charge
+        description: Average amount (USD) billed by suppliers before Medicare processing. Typically higher than allowed or payment.
         expr: avg(fact_claims.avg_supplier_submitted_charge)
         access_modifier: public_access
       - name: BENEFICIARIES_PER_CLAIM
-        description: Beneficiaries per claim
+        description: Average number of distinct beneficiaries per claim. Values typically <= 1.0.
         expr: sum(fact_claims.total_supplier_benes) / nullif(sum(fact_claims.total_supplier_claims), 0)
         access_modifier: public_access
+      - name: CHARGE_TO_ALLOWED_RATIO
+        synonyms:
+          - markup ratio
+          - charge ratio
+        description: Ratio of submitted charge to allowed amount. Values > 1.0 indicate supplier charges exceed Medicare-approved rates.
+        expr: avg(fact_claims.avg_supplier_submitted_charge) / nullif(avg(fact_claims.avg_supplier_medicare_allowed), 0)
+        access_modifier: public_access
       - name: CLAIMS_PER_SUPPLIER
-        description: Claims per supplier
+        description: Average number of claims per supplier. Measures supplier productivity or utilization.
         expr: sum(fact_claims.total_supplier_claims) / nullif(sum(fact_claims.total_suppliers), 0)
         access_modifier: public_access
       - name: PAYMENT_TO_ALLOWED_RATIO
-        description: Payment-to-allowed ratio
+        description: Ratio of Medicare payment to allowed amount. Typically 0.7-0.9; values > 1.0 may indicate data quality issues.
         expr: avg(fact_claims.avg_supplier_medicare_payment) / nullif(avg(fact_claims.avg_supplier_medicare_allowed), 0)
         access_modifier: public_access
       - name: SERVICES_PER_CLAIM
-        description: Services per claim
+        description: Average number of services per claim. Values >= 1.0; higher values indicate more complex claims.
         expr: sum(fact_claims.total_supplier_services) / nullif(sum(fact_claims.total_supplier_claims), 0)
         access_modifier: public_access
       - name: TOTAL_BENEFICIARIES_SUM
@@ -240,7 +280,7 @@ tables:
           - number of beneficiaries
           - patient count
           - total beneficiaries
-        description: Total beneficiaries
+        description: "Sum of all Medicare beneficiaries served. Unit: count. Not deduplicated across providers."
         expr: sum(fact_claims.total_supplier_benes)
         access_modifier: public_access
       - name: TOTAL_CLAIMS_SUM
@@ -249,7 +289,7 @@ tables:
           - claims volume
           - number of claims
           - total claims
-        description: Total claims
+        description: "Sum of all supplier claims. Unit: count. Aggregated at provider + HCPCS grain."
         expr: sum(fact_claims.total_supplier_claims)
         access_modifier: public_access
       - name: TOTAL_SERVICES_SUM
@@ -258,7 +298,7 @@ tables:
           - service count
           - services volume
           - total services
-        description: Total services
+        description: "Sum of all services rendered. Unit: count. One claim may have multiple services."
         expr: sum(fact_claims.total_supplier_services)
         access_modifier: public_access
       - name: TOTAL_SUPPLIERS_SUM
@@ -267,7 +307,7 @@ tables:
           - provider count
           - supplier count
           - total suppliers
-        description: Total suppliers
+        description: "Sum of unique suppliers involved. Unit: count."
         expr: sum(fact_claims.total_suppliers)
         access_modifier: public_access
     primary_key:
@@ -278,6 +318,7 @@ relationships:
   - name: FACT_TO_PROVIDER
     left_table: FACT_CLAIMS
     right_table: DIM_PROVIDER
+    join_type: left_outer
     relationship_columns:
       - left_column: REFERRING_NPI
         right_column: PROVIDER_NPI
@@ -423,7 +464,7 @@ verified_queries:
       group by hcpcs_code
       order by beneficiaries desc
       limit 5
-    use_as_onboarding_question: false
+    use_as_onboarding_question: true
     verified_by: Sahil Bhange
   - name: top_zip_by_suppliers
     question: What are the top 3 ZIP codes by total suppliers?
@@ -447,7 +488,7 @@ verified_queries:
         sum(total_supplier_services) as services
       from fact_claims
       group by supplier_rental_indicator
-    use_as_onboarding_question: false
+    use_as_onboarding_question: true
     verified_by: Sahil Bhange
   - name: top_hcpcs_by_payment_to_allowed_ratio
     question: Which HCPCS codes have the highest payment-to-allowed ratio?
@@ -466,4 +507,8 @@ module_custom_instructions:
     For top or highest questions, include ORDER BY on the metric and LIMIT 5-10.
     Use named filters (rentals_only, common_hcpcs, durable_medical_equipment, high_volume_providers, california_providers, texas_providers, top_states) when relevant.
     Always round monetary amounts to 2 decimals.
-  question_categorization: Accept questions about DMEPOS claims, providers, HCPCS codes, Medicare payments, and geography. Reject questions requesting patient-level or identifiable data. For device definitions or code lookups, suggest Cortex Search sources.
+  question_categorization: |
+    Accept questions about DMEPOS claims, providers, HCPCS codes, Medicare payments, and geography.
+    Reject questions requesting patient-level or identifiable data.
+    For device definitions or code lookups, suggest Cortex Search sources.
+    This data is a single time-period snapshot. Time-based trending or year-over-year questions are not supported; inform the user if asked.
