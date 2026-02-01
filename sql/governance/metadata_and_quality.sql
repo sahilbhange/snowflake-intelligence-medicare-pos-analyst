@@ -262,7 +262,7 @@ insert into GOVERNANCE.COLUMN_METADATA (
   -- Volume metrics
   ('DMEPOS_CLAIMS', 'total_supplier_claims', 'number', 'Total count of supplier claims for this provider-HCPCS combination.', 'positive integer', 'public', '150'),
   ('DMEPOS_CLAIMS', 'total_supplier_services', 'number', 'Total count of services rendered.', 'positive integer', 'public', '200'),
-  ('DMEPOS_CLAIMS', 'total_beneficiaries', 'number', 'Total distinct Medicare beneficiaries served. Aggregated count only.', 'positive integer', 'internal', '75'),
+  ('DMEPOS_CLAIMS', 'total_supplier_benes', 'number', 'Count of distinct Medicare beneficiaries served for this provider-HCPCS combination (may be suppressed for small cells).', 'positive integer', 'internal', '75'),
   ('DMEPOS_CLAIMS', 'total_suppliers', 'number', 'Total count of suppliers involved.', 'positive integer', 'public', '5'),
 
   -- Payment metrics
@@ -360,7 +360,7 @@ where sensitivity is not null;
 -- VERIFICATION
 -- ============================================================================
 
-select 'DATASET_METADATA' as table_name, count(*) as rows from GOVERNANCE.DATASET_METADATA
+select 'DATASET_METADATA' as table_name, count(*) as row_cnt from GOVERNANCE.DATASET_METADATA
 union all
 select 'COLUMN_METADATA', count(*) from GOVERNANCE.COLUMN_METADATA
 union all

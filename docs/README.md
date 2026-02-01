@@ -93,7 +93,7 @@ Deep-dive articles on Snowflake Intelligence best practices. **Start here to lea
 |---------|-------|-----------|-----------|
 | [Hub Article](../medium/claude/hub_article.md) | 3-layer framework overview (Intelligence/Foundation/Trust) | 18-20 min | Choose a layer below |
 | [Subarticle 1: Intelligence Layer](../medium/claude/subarticle_1_intelligence_layer.md) | Context, semantic models, search, embeddings, RAG | 20-22 min | → [Docs](reference/embedding_strategy.md) → [SQL](../sql/search/) |
-| [Subarticle 2: Foundation Layer](../medium/claude/subarticle_2_foundation_layer.md) | Medallion, schema design, optimization, automation | 20-22 min | → [Docs](implementation/data_model.md) → [SQL](../sql/analytics/) |
+| [Subarticle 2: Foundation Layer](../medium/claude/subarticle_2_foundation_layer.md) | Medallion, schema design, optimization, automation | 20-22 min | → [Docs](implementation/data_model.md) → [SQL](../sql/transform/) |
 | [Subarticle 3: Trust Layer](../medium/claude/subarticle_3_trust_layer.md) | Governance, quality, evaluation, versioning | 20-22 min | → [Docs](governance/) → [SQL](../sql/setup/) |
 
 **Navigation:** Each article links to relevant Docs. Each Doc links to Medium & SQL. Each SQL file has navigation comments.
@@ -214,10 +214,8 @@ See: [Publish Checklist](governance/semantic_publish_checklist.md)
 
 ## 📝 What's Not Here
 
-**Archived documents** (replaced by newer docs):
-- [archive/architecture.md](archive/architecture.md) - Basic scaffold (see [Data Model](implementation/data_model.md) instead)
-- [archive/data_dictionary.md](archive/data_dictionary.md) - Basic dictionary (see [Metric Catalog](reference/metric_catalog.md) instead)
-- [archive/project_overview.md](archive/project_overview.md) - Old overview (see [Getting Started](implementation/getting-started.md) instead)
+**Legacy/archived docs:**
+- This repo does not keep an `docs/archive/` folder. If you’re looking for older scaffolds, use `git log -- docs/` to browse history.
 
 ---
 

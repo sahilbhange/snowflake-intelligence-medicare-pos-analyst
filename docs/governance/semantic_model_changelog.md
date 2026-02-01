@@ -6,7 +6,7 @@ Format: [Semantic Versioning](https://semver.org/) (MAJOR.MINOR.PATCH)
 
 ---
 
-## [1.0.0] - 2024-01-XX (Initial Release)
+## [1.1.0] - 2024-01-XX (Initial Release)
 
 ### Status: Published
 
@@ -83,4 +83,4 @@ None planned
 
 | Version | Reviewer | Date | Status |
 |---------|----------|------|--------|
-| 1.0.0 | Sahil Bhange | 2024-01-XX | Approved |
+| 1.1.0 | Sahil Bhange | 2024-01-XX | Approved |

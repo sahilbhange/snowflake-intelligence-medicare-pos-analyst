@@ -7,13 +7,13 @@ Complete this checklist before publishing any version of the semantic model to p
 ## Pre-Publish Validation
 
 ### Data Quality
-- [ ] All data quality checks pass (`make quality`)
+- [ ] Data profiling looks healthy (`make profile`)
 - [ ] Row counts within expected range (no sudden drops/spikes)
 - [ ] No unexpected NULL values in key fields
 - [ ] Key metrics return reasonable values
 
 ### Semantic Tests
-- [ ] All regression tests pass (`models/semantic_model_tests.sql`)
+- [ ] All regression tests pass (`sql/intelligence/semantic_model_tests.sql` or `make tests`)
 - [ ] Verified queries return expected results
 - [ ] Edge case queries handled gracefully
 
@@ -57,7 +57,7 @@ Complete this checklist before publishing any version of the semantic model to p
 - [ ] Match score >= 65% for moderate questions
 
 ### Validation Results Logged
-- [ ] AI validation results recorded in `AI_VALIDATION_RESULTS`
+- [ ] AI validation results recorded in `INTELLIGENCE.AI_VALIDATION_RESULTS`
 - [ ] Improvement candidates identified
 - [ ] Critical mismatches resolved
 
@@ -74,7 +74,8 @@ Complete this checklist before publishing any version of the semantic model to p
 ### 2. Upload New Model
 ```bash
 # Upload YAML to Snowflake stage
-snowsql -q "PUT file://models/DMEPOS_SEMANTIC_MODEL.yaml @SEMANTIC_MODELS AUTO_COMPRESS=FALSE OVERWRITE=TRUE"
+# Note: stage name aligns with the agent workflow in `sql/agent/cortex_agent.sql`.
+snow sql -c sf_int -q "PUT file://models/DMEPOS_SEMANTIC_MODEL.yaml @MEDICARE_POS_DB.ANALYTICS.CORTEX_SEM_MODEL_STG AUTO_COMPRESS=FALSE OVERWRITE=TRUE"
 ```
 
 ### 3. Verify Deployment
@@ -85,10 +86,8 @@ snowsql -q "PUT file://models/DMEPOS_SEMANTIC_MODEL.yaml @SEMANTIC_MODELS AUTO_C
 
 ### 4. Update Instrumentation
 ```sql
--- Log deployment event
-INSERT INTO ANALYTICS.AUDIT_LOG (event_type, object_name, action_details)
-VALUES ('model_deployment', 'DMEPOS_SEMANTIC_MODEL',
-        OBJECT_CONSTRUCT('version', '1.x.x', 'deployed_by', CURRENT_USER()));
+-- Optional: log deployment in your own audit table (not created by this repo).
+-- Tip: you can also tag the deployment by inserting a note into `INTELLIGENCE.SEMANTIC_FEEDBACK`.
 ```
 
 ---
@@ -132,4 +131,4 @@ If issues are discovered post-deployment:
 
 | Version | Published Date | Published By | Notes |
 |---------|---------------|--------------|-------|
-| 1.0.0 | TBD | | Initial release |
+| 1.1.0 | TBD | | Initial release |

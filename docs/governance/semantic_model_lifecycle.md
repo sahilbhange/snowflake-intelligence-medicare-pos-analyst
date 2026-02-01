@@ -94,7 +94,7 @@ Format: `MAJOR.MINOR.PATCH`
 - **MINOR**: New features (new metric, new filter)
 - **PATCH**: Bug fixes, documentation updates
 
-Current version: `1.0.0`
+Current version: `1.1.0` (matches `models/DMEPOS_SEMANTIC_MODEL.yaml`)
 
 ## Quality Gates
 
@@ -103,7 +103,7 @@ Before any version is published:
 
 > **💾 Reference:** Run tests from [semantic_model_tests.sql](../../sql/intelligence/semantic_model_tests.sql)
 
-- [ ] All semantic tests pass (see `models/semantic_model_tests.sql`)
+- [ ] All semantic tests pass (see `sql/intelligence/semantic_model_tests.sql` or run `make tests`)
 - [ ] Verified queries return expected results
 - [ ] No critical data quality issues
 - [ ] Changelog updated
@@ -112,15 +112,15 @@ Before any version is published:
 
 ## Feedback Integration
 
-1. Collect feedback via `ANALYTICS.SEMANTIC_FEEDBACK` table
+1. Collect feedback via `INTELLIGENCE.SEMANTIC_FEEDBACK` table
 2. Triage feedback weekly
 3. High-impact issues prioritized for next release
 4. Feedback status tracked: `open` -> `reviewed` -> `implemented` or `rejected`
 
 ## Related Documentation
 
-- [Metric Catalog](metric_catalog.md) - Business definitions for all metrics
+- [Metric Catalog](../reference/metric_catalog.md) - Business definitions for all metrics
 - [Semantic Model Changelog](semantic_model_changelog.md) - Version history
 - [Publish Checklist](semantic_publish_checklist.md) - Pre-publish validation steps
-- [Agent Guidance](agent_guidance.md) - Routing and validation guidance
-- [Execution Guide](execution_guide.md) - Deployment instructions
+- [Agent Guidance](../reference/agent_guidance.md) - Routing and validation guidance
+- [Getting Started](../implementation/getting-started.md) - Deployment instructions

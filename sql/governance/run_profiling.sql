@@ -36,8 +36,8 @@ create table if not exists GOVERNANCE.DATA_PROFILE_RESULTS (
   notes string
 );
 
-set run_id = uuid_string();
-
+set run_id = (select uuid_string());
+select $run_id;
 -- ---------------------------------------------------------------------------
 -- Table-level row counts
 -- ---------------------------------------------------------------------------

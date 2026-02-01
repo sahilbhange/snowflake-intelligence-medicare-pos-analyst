@@ -116,8 +116,11 @@ make load
 
 **Note:** You may need to run PUT commands manually:
 ```sql
-PUT file://data/dmepos_*.csv @RAW.DMEPOS_STAGE;
-PUT file://data/gudid_*.csv @RAW.GUDID_STAGE;
+-- Upload CMS DMEPOS JSON (created by: data/dmepos_referring_provider_download.py)
+PUT file://data/dmepos_referring_provider.json @RAW.RAW_DMEPOS_STAGE AUTO_COMPRESS=TRUE;
+
+-- Upload FDA GUDID delimited files (created by: data/data_download.sh)
+PUT file://data/gudid_delimited/*.txt @RAW.RAW_GUDID_STAGE AUTO_COMPRESS=TRUE;
 ```
 
 **Verification:**
@@ -232,13 +235,14 @@ After SQL objects are created, upload the semantic model:
 
 ### Option 1: Snowsight UI
 1. Navigate to Data > Databases > MEDICARE_POS_DB > Stages
-2. Create a stage named `SEMANTIC_MODELS`
-3. Upload `models/DMEPOS_SEMANTIC_MODEL.yaml`
+2. Create (or use) stage: `ANALYTICS.CORTEX_SEM_MODEL_STG`
+3. Upload `models/DMEPOS_SEMANTIC_MODEL.yaml` to that stage
 
 ### Option 2: Snowflake CLI
 ```sql
-CREATE STAGE IF NOT EXISTS ANALYTICS.SEMANTIC_MODELS;
-PUT file://models/DMEPOS_SEMANTIC_MODEL.yaml @ANALYTICS.SEMANTIC_MODELS AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
+-- This is the stage referenced by sql/agent/cortex_agent.sql and used for agent creation.
+CREATE STAGE IF NOT EXISTS ANALYTICS.CORTEX_SEM_MODEL_STG;
+PUT file://models/DMEPOS_SEMANTIC_MODEL.yaml @ANALYTICS.CORTEX_SEM_MODEL_STG AUTO_COMPRESS=FALSE OVERWRITE=TRUE;
 ```
 
 ### Option 3: Snowflake Intelligence UI
@@ -378,18 +382,18 @@ DROP DATABASE IF EXISTS MEDICARE_POS_DB;
 - Monitor `GOVERNANCE.DATA_QUALITY_RESULTS`
 
 ### 3. Documentation Review
-- Review [Metric Catalog](metric_catalog.md)
-- Review [Agent Guidance](agent_guidance.md)
-- Complete [Publish Checklist](semantic_publish_checklist.md)
+- Review [Metric Catalog](../reference/metric_catalog.md)
+- Review [Agent Guidance](../reference/agent_guidance.md)
+- Complete [Publish Checklist](../governance/semantic_publish_checklist.md)
 
 ---
 
 ## Related Documentation
 
-- [Project Overview](project_overview.md)
-- [Architecture](architecture.md)
-- [Data Dictionary](data_dictionary.md)
 - [Data Model](data_model.md)
-- [Metric Catalog](metric_catalog.md)
-- [Agent Guidance](agent_guidance.md)
-- [Semantic Model Lifecycle](semantic_model_lifecycle.md)
+- [Snowflake Intelligence Setup](snowflake_intelligence_setup.md)
+- [Data Dictionary](../governance/data_dictionary.md)
+- [Semantic Model Lifecycle](../governance/semantic_model_lifecycle.md)
+- [Publish Checklist](../governance/semantic_publish_checklist.md)
+- [Metric Catalog](../reference/metric_catalog.md)
+- [Agent Guidance](../reference/agent_guidance.md)

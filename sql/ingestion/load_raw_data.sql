@@ -203,3 +203,4 @@ copy into RAW.RAW_GUDID_STERILIZATION_METHODS
   from @RAW.RAW_GUDID_STAGE/sterilizationMethodTypes.txt.gz
   file_format = (format_name = RAW.FF_PIPE_STD)
   on_error = 'ABORT_STATEMENT';
+

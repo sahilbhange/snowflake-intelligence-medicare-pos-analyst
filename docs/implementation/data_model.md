@@ -18,7 +18,7 @@ This diagram reflects the current model in `sql/transform/build_curated_model.sq
 
 | Schema | Layer | Contents |
 |--------|-------|----------|
-| RAW | Bronze | RAW_DMEPOS, RAW_GUDID_DEVICE, RAW_GUDID_PRODUCT_CODES |
+| RAW | Bronze | RAW_DMEPOS, RAW_GUDID_DEVICE, RAW_GUDID_PRODUCT_CODES (+ other RAW.GUDID helper tables) |
 | CURATED | Silver | DMEPOS_CLAIMS, GUDID_DEVICES |
 | ANALYTICS | Gold | DIM_PROVIDER, DIM_DEVICE, DIM_PRODUCT_CODE, FACT_DMEPOS_CLAIMS |
 | SEARCH | - | Cortex Search services |
@@ -32,7 +32,9 @@ This diagram reflects the current model in `sql/transform/build_curated_model.sq
 erDiagram
     DMEPOS_CLAIMS {
         number referring_npi
+        string provider_state
         string hcpcs_code
+        string hcpcs_description
         string rbcs_id
         string supplier_rental_indicator
         number total_suppliers
@@ -60,6 +62,10 @@ erDiagram
 
     DIM_DEVICE {
         string di_number PK
+        string public_device_record_key
+        string public_version_status
+        number public_version_number
+        string device_name
         string brand_name
         string version_or_model_number
         string catalog_number
@@ -71,7 +77,7 @@ erDiagram
     }
 
     DIM_PRODUCT_CODE {
-        string primary_di PK
+        string primary_di
         string product_code
         string product_code_name
     }
@@ -84,7 +90,7 @@ erDiagram
     }
 
     DMEPOS_CLAIMS ||--o{ DIM_PROVIDER : "referring_npi"
-    DIM_DEVICE ||--o{ DIM_PRODUCT_CODE : "primary_di"
+    DIM_DEVICE ||--o{ DIM_PRODUCT_CODE : "di_number -> primary_di"
     FACT_DMEPOS_CLAIMS }o--|| DIM_PROVIDER : "referring_npi"
     FACT_DMEPOS_CLAIMS }o--o| DIM_DEVICE : "hcpcs_code -> di_number"
 ```
@@ -117,5 +123,5 @@ erDiagram
 - `DIM_PROVIDER` is derived from `DMEPOS_CLAIMS` (distinct providers).
 - `DIM_DEVICE` is derived from `GUDID_DEVICES`.
 - `DIM_PRODUCT_CODE` is derived from GUDID product code data.
-- `FACT_DMEPOS_CLAIMS` enriches claims with provider and device attributes.
+- `FACT_DMEPOS_CLAIMS` is a view that selects `f.*` (all claim columns) and adds 2 enrichment fields (`provider_specialty_desc_ref`, `device_brand_name`).
 - The `hcpcs_code -> di_number` join is a demo-friendly link, not a strict key match.

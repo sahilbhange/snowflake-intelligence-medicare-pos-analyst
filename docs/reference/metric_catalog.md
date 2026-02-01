@@ -251,6 +251,6 @@ Business definitions, calculations, and usage guidance for all metrics in the DM
 
 ## Related Documentation
 
-- [Semantic Model Lifecycle](semantic_model_lifecycle.md)
-- [Data Dictionary](data_dictionary.md)
-- [Semantic Model Changelog](semantic_model_changelog.md)
+- [Semantic Model Lifecycle](../governance/semantic_model_lifecycle.md)
+- [Data Dictionary](../governance/data_dictionary.md)
+- [Semantic Model Changelog](../governance/semantic_model_changelog.md)

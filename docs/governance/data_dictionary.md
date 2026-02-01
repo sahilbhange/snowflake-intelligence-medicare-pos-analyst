@@ -48,14 +48,14 @@ This data dictionary serves as the authoritative source for:
 
 | Source ID | Source Name | Provider | Update Frequency | Grain |
 |-----------|-------------|----------|------------------|-------|
-| CMS-DMEPOS-001 | CMS DMEPOS Referring Provider | Centers for Medicare & Medicaid Services | Annual | Provider + HCPCS + Year |
+| CMS-DMEPOS-001 | CMS DMEPOS Referring Provider | Centers for Medicare & Medicaid Services | Annual | Provider + HCPCS (single-year snapshot) |
 | FDA-GUDID-001 | FDA Global Unique Device Identification Database | U.S. Food and Drug Administration | Monthly | Device Identifier (DI) |
 
 ### Data Acquisition
 
 **CMS DMEPOS:**
 - **Method:** API download (JSON)
-- **URL:** https://data.cms.gov/provider-summary-by-type-of-service/medicare-dmepos-referring-provider/medicare-dmepos-referring-provider
+- **URL:** https://data.cms.gov/data-api/v1/dataset/86b4807a-d63a-44be-bfdf-ffd398d5e623/data
 - **License:** Public domain
 - **Attribution:** CMS Public Use Files
 
@@ -80,30 +80,33 @@ This data dictionary serves as the authoritative source for:
 | **Intelligence** | INTELLIGENCE | AI instrumentation, eval sets, logs | Internal | 1 year |
 | **Governance** | GOVERNANCE | Metadata, lineage, quality checks | Internal | 7 years |
 
+**Implementation note (project alignment):**
+- Objects are created by SQL scripts under `sql/`; retention/archival are not enforced automatically.
+- `ANALYTICS.*` are views built from `CURATED.*` (see `sql/transform/build_curated_model.sql`).
+
 ---
 
 ## Data Dictionary: RAW Layer
 
 ### RAW.RAW_DMEPOS
 
-**Purpose:** Raw landing for CMS DMEPOS JSON
+**Purpose:** Raw landing for CMS DMEPOS JSON (one VARIANT per record)
 **Classification:** Public
 **Owner:** Data Engineering Team
 **Steward:** Healthcare Data Steward
 
 | Column | Data Type | Nullable | Classification | Description |
 |--------|-----------|----------|----------------|-------------|
-| raw_data | VARIANT | No | Public | Full JSON payload from CMS API |
-| loaded_at | TIMESTAMP | No | Internal | Timestamp of data ingestion |
+| v | VARIANT | No | Public | One CMS API JSON record (loaded from staged JSON array) |
 
 **Quality Rules:**
 - Must be valid JSON
-- Loaded_at must be within last 24 hours of run time
+- Each row should contain CMS fields used downstream (e.g., `Rfrg_NPI`, `HCPCS_CD`)
 
 **Lineage:**
 - **Source:** CMS DMEPOS API
-- **Transformation:** None (raw ingestion)
-- **Downstream:** CURATED.DMEPOS_CLAIMS
+- **Transformation:** None (raw ingestion via `sql/ingestion/load_raw_data.sql`)
+- **Downstream:** CURATED.DMEPOS_CLAIMS (built by `sql/transform/build_curated_model.sql`)
 
 ---
 
@@ -116,17 +119,32 @@ This data dictionary serves as the authoritative source for:
 
 | Column | Data Type | Nullable | Classification | Description |
 |--------|-----------|----------|----------------|-------------|
-| raw_data | VARIANT | No | Public | Full device record from FDA bulk file |
-| loaded_at | TIMESTAMP | No | Internal | Timestamp of data ingestion |
+| primary_di | STRING | Yes | Public | Primary device identifier (DI) from GUDID |
+| public_device_record_key | STRING | Yes | Public | Public record key for the device |
+| public_version_status | STRING | Yes | Public | Version status (published/updated) |
+| device_record_status | STRING | Yes | Public | Device record status from the raw file |
+| public_version_number | NUMBER | Yes | Public | Public version number |
+| device_publish_date | STRING | Yes | Public | Publish date (raw string; cast in curated layer) |
+| device_comm_distribution_status | STRING | Yes | Public | Commercial distribution status (raw string) |
+| brand_name | STRING | Yes | Public | Brand name |
+| version_model_number | STRING | Yes | Public | Version/model number |
+| catalog_number | STRING | Yes | Public | Catalog number |
+| company_name | STRING | Yes | Public | Manufacturer/labeler name |
+| device_description | STRING | Yes | Public | Device description text |
+| rx | STRING | Yes | Public | Rx flag from raw file |
+| otc | STRING | Yes | Public | OTC flag from raw file |
 
 **Quality Rules:**
-- Must contain primary_di field
-- Device publish date must be valid
+- primary_di should be present for records used downstream
+- device_publish_date should be parseable as a date for curated records
 
 **Lineage:**
 - **Source:** FDA GUDID Bulk Download
-- **Transformation:** None (raw ingestion)
-- **Downstream:** CURATED.GUDID_DEVICES
+- **Transformation:** None (raw ingestion via `sql/ingestion/load_raw_data.sql`)
+- **Downstream:** CURATED.GUDID_DEVICES (built by `sql/transform/build_curated_model.sql`)
+
+**Related RAW tables (GUDID):**
+- This project ingests additional `RAW.RAW_GUDID_*` tables (e.g., identifiers, contacts, product codes) defined in `sql/ingestion/load_raw_data.sql`.
 
 ---
 
@@ -142,43 +160,38 @@ This data dictionary serves as the authoritative source for:
 
 | Column | Data Type | Nullable | Classification | Business Definition | Valid Values | Sample Values |
 |--------|-----------|----------|----------------|---------------------|--------------|---------------|
-| referring_npi | NUMBER(10,0) | No | Confidential | National Provider Identifier for referring physician | 10-digit NPI | 1003000126 |
-| provider_last_name | STRING | Yes | Confidential | Provider's last name (organization name for entities) | Alpha characters | SMITH, JONES |
-| provider_first_name | STRING | Yes | Confidential | Provider's first name (null for organizations) | Alpha characters | JOHN, MARY |
-| provider_mi | STRING | Yes | Confidential | Provider's middle initial | Single character | J, M |
-| provider_credentials | STRING | Yes | Internal | Provider credentials (MD, DO, NP, PA) | Standard credentials | MD, DO, NP |
-| provider_gender | STRING | Yes | Internal | Provider gender | M, F, or null | M, F |
-| provider_entity_type | STRING | Yes | Internal | Individual or Organization | I (Individual), O (Organization) | I, O |
-| provider_street1 | STRING | Yes | Confidential | Provider street address line 1 | Valid US address | 123 MAIN ST |
-| provider_street2 | STRING | Yes | Confidential | Provider street address line 2 | Valid US address | SUITE 100 |
-| provider_city | STRING | Yes | Internal | Provider city | Valid US city | LOS ANGELES |
-| provider_zip | STRING | Yes | Internal | Provider ZIP code | 5 or 9 digit ZIP | 90001, 90001-1234 |
-| provider_state | STRING | Yes | Public | Two-letter US state code | US state abbreviations | CA, TX, NY |
-| provider_country | STRING | Yes | Public | Country code | US (currently only US) | US |
-| provider_specialty_code | STRING | Yes | Internal | Medicare specialty code | CMS specialty codes | 11, 50 |
-| provider_specialty_desc | STRING | Yes | Internal | Medicare specialty description | CMS specialty descriptions | Internal Medicine, Nurse Practitioner |
-| provider_specialty_source | STRING | Yes | Internal | Source of specialty classification | CMS, NPPES | CMS |
+| referring_npi | NUMBER | No | Internal | National Provider Identifier for referring physician | 10-digit NPI | 1003000126 |
+| provider_last_name | STRING | Yes | Internal | Referring provider last name or org name | Free text | SMITH, JONES |
+| provider_first_name | STRING | Yes | Internal | Referring provider first name | Free text | JOHN, MARY |
+| provider_city | STRING | Yes | Internal | Referring provider city | Free text | LOS ANGELES |
+| provider_state | STRING | Yes | Public | Referring provider state | US state abbreviations | CA, TX, NY |
+| provider_zip | STRING | Yes | Internal | Referring provider 5-digit ZIP | 5-digit ZIP | 90001 |
+| provider_country | STRING | Yes | Public | Country code (typically US) | Country codes | US |
+| provider_specialty_code | STRING | Yes | Internal | CMS specialty code | CMS specialty codes | 11, 50 |
+| provider_specialty_desc | STRING | Yes | Internal | CMS specialty description | Free text | Internal Medicine |
+| provider_specialty_source | STRING | Yes | Internal | Source for specialty classification | CMS | CMS |
+| rbcs_level | STRING | Yes | Public | RBCS level | Free text | Level 1 |
+| rbcs_id | STRING | Yes | Public | Restructured BETOS Classification System (RBCS) identifier | Alphanumeric | DC002N |
+| rbcs_desc | STRING | Yes | Public | RBCS description | Free text | DME: Oxygen and respiratory |
 | hcpcs_code | STRING | No | Public | Healthcare Common Procedure Coding System code | 5-character alphanumeric | E1390, A4253 |
 | hcpcs_description | STRING | Yes | Public | Description of HCPCS code | Free text | Oxygen concentrator |
-| rbcs_id | STRING | Yes | Internal | RBCS (Revenue Bearer Code System) identifier | Alphanumeric | R12345 |
 | supplier_rental_indicator | STRING | Yes | Public | Rental equipment flag (at HCPCS level) | Y (Yes), N (No), null | Y, N |
 | total_suppliers | NUMBER | Yes | Internal | Count of unique suppliers | >= 0 | 5, 12 |
-| total_supplier_benes | NUMBER | Yes | Confidential | Count of unique beneficiaries served (aggregated) | >= 0, may be suppressed | 45, 120 |
+| total_supplier_benes | NUMBER | Yes | Internal | Count of unique beneficiaries served (aggregated) | >= 0, may be suppressed | 45, 120 |
 | total_supplier_claims | NUMBER | Yes | Public | Total count of claims | >= 0 | 100, 500 |
 | total_supplier_services | NUMBER | Yes | Public | Total count of services rendered | >= total_supplier_claims | 150, 600 |
-| avg_supplier_submitted_charge | NUMBER(10,2) | Yes | Public | Average submitted charge amount (USD) | >= 0 | 125.50 |
-| avg_supplier_medicare_allowed | NUMBER(10,2) | Yes | Public | Average Medicare allowed amount (USD) | >= 0, <= avg_submitted_charge | 85.25 |
-| avg_supplier_medicare_payment | NUMBER(10,2) | Yes | Public | Average Medicare payment amount (USD) | >= 0, <= avg_allowed | 68.20 |
-| avg_supplier_medicare_standard | NUMBER(10,2) | Yes | Public | Average Medicare standardized payment (USD) | >= 0 | 70.00 |
-| loaded_at | TIMESTAMP | No | Internal | Timestamp of ETL load | System timestamp | 2024-01-20 10:30:00 |
+| avg_supplier_submitted_charge | NUMBER(38,4) | Yes | Public | Average supplier submitted charge (USD) | >= 0 | 125.50 |
+| avg_supplier_medicare_allowed | NUMBER(38,4) | Yes | Public | Average Medicare allowed amount (USD) | >= 0 | 85.25 |
+| avg_supplier_medicare_payment | NUMBER(38,4) | Yes | Public | Average Medicare payment amount (USD) | >= 0 | 68.20 |
+| avg_supplier_medicare_standard | NUMBER(38,4) | Yes | Public | Average Medicare standardized amount (USD) | >= 0 | 70.00 |
 
 **Business Rules:**
-1. **Grain:** One row per unique (referring_npi, hcpcs_code) combination
-2. **Deduplication:** Latest record wins (QUALIFY ROW_NUMBER() OVER ... = 1)
-3. **Suppression:** CMS suppresses beneficiary counts < 11 for privacy
-4. **Payment hierarchy:** avg_submitted_charge >= avg_allowed >= avg_payment
-5. **Services >= Claims:** Services count must be >= claims count
-6. **NPI validation:** NPIs must be 10 digits and valid per NPPES registry
+1. **Grain:** One row per (referring_npi, hcpcs_code) combination in the source snapshot
+2. **Deduplication:** Not applied in the current build; the source is expected to be unique at the stated grain
+3. **Suppression:** CMS may suppress beneficiary counts (< 11) for privacy
+4. **Payment hierarchy:** avg_submitted_charge >= avg_allowed >= avg_payment (expected)
+5. **Services >= Claims:** total_supplier_services >= total_supplier_claims (expected)
+6. **NPI validation:** 10-digit numeric NPI (expected)
 
 **Data Quality Checks:**
 - No nulls in referring_npi, hcpcs_code
@@ -188,12 +201,12 @@ This data dictionary serves as the authoritative source for:
 
 **Lineage:**
 - **Source:** RAW.RAW_DMEPOS
-- **Transformation:** JSON parsing, type casting, deduplication
+- **Transformation:** JSON parsing, type casting
 - **SQL:** sql/transform/build_curated_model.sql
 - **Downstream:** ANALYTICS.DIM_PROVIDER, ANALYTICS.FACT_DMEPOS_CLAIMS
 
 **Compliance Notes:**
-- NPIs are confidential per HIPAA (limited disclosure)
+- NPIs are treated as internal in this project (provider identifier; not patient PHI)
 - Beneficiary counts suppressed per CMS Data Use Agreement
 - Public dataset, no direct PHI
 
@@ -209,30 +222,29 @@ This data dictionary serves as the authoritative source for:
 
 | Column | Data Type | Nullable | Classification | Business Definition | Valid Values |
 |--------|-----------|----------|----------------|---------------------|--------------|
-| di_number | STRING | No | Public | Device Identifier (DI) - primary key | 14-digit GTIN or HRI | 00627595000712 |
-| brand_name | STRING | Yes | Public | Brand or trade name of device | Free text | Medline, Invacare |
-| version_or_model_number | STRING | Yes | Public | Device version or model number | Alphanumeric | Model-X100 |
-| catalog_number | STRING | Yes | Public | Manufacturer catalog number | Alphanumeric | CAT-12345 |
-| company_name | STRING | Yes | Public | Device manufacturer or labeler | Free text | MEDLINE INDUSTRIES, INC. |
-| device_description | STRING | Yes | Public | Textual description of device | Free text | Portable oxygen concentrator |
-| device_count_in_base_package | NUMBER | Yes | Internal | Count of devices in package | >= 1 | 1, 12 |
-| device_status | STRING | Yes | Internal | Regulatory status | Active, Inactive | Active |
-| device_publish_date | DATE | Yes | Internal | FDA publish date | Valid date | 2023-05-15 |
-| device_record_status | STRING | Yes | Internal | Record status in GUDID | Published, Updated | Published |
-| commercial_distribution_status | STRING | Yes | Public | Distribution status | In Commercial Distribution, Not in Commercial Distribution | In Commercial Distribution |
-| rx_or_otc | STRING | Yes | Public | Prescription or over-the-counter | Rx, OTC | Rx |
-| loaded_at | TIMESTAMP | No | Internal | Timestamp of ETL load | System timestamp | 2024-01-20 11:00:00 |
+| public_device_record_key | STRING | Yes | Public | Public record key (used as doc_id in search) | Free text |
+| public_version_status | STRING | Yes | Public | Public version status | Free text |
+| public_version_number | NUMBER | Yes | Public | Public version number | Integer |
+| di_number | STRING | Yes | Public | Primary Device Identifier (DI) | Free text |
+| device_name | STRING | Yes | Public | Device name (brand_name in this build) | Free text |
+| brand_name | STRING | Yes | Public | Brand or trade name | Free text |
+| version_or_model_number | STRING | Yes | Public | Version/model number | Free text |
+| catalog_number | STRING | Yes | Public | Catalog number | Free text |
+| company_name | STRING | Yes | Public | Manufacturer/labeler | Free text |
+| device_description | STRING | Yes | Public | Device description | Free text |
+| device_status | STRING | Yes | Public | Device record status | Free text |
+| device_publish_date | DATE | Yes | Public | Device publish date | Valid date |
+| commercial_distribution_status | STRING | Yes | Public | Commercial distribution status | Free text |
 
 **Business Rules:**
-1. **Grain:** One row per unique di_number
-2. **Primary key:** di_number (14-digit GTIN format)
-3. **Active devices:** commercial_distribution_status = 'In Commercial Distribution'
-4. **Deduplication:** Latest publish date wins
+1. **Grain:** One row per device record as loaded (no additional dedup in current build)
+2. **Identifier:** `di_number` comes from `RAW.RAW_GUDID_DEVICE.primary_di`
+3. **Active devices:** Not filtered in CURATED; downstream search/docs may filter on distribution status
 
 **Data Quality Checks:**
-- di_number must be unique
-- device_publish_date must be valid
-- No nulls in di_number, company_name, device_description
+- di_number should be unique for curated records used downstream
+- device_publish_date should be valid where present
+- company_name should not be null for records used in device search/docs
 
 **Lineage:**
 - **Source:** RAW.RAW_GUDID_DEVICE
@@ -251,23 +263,28 @@ This data dictionary serves as the authoritative source for:
 ### ANALYTICS.DIM_PROVIDER
 
 **Purpose:** Provider dimension for analytics
-**Type:** Slowly Changing Dimension (SCD Type 1)
+**Type:** View (dimension)
 **Classification:** Confidential
 **Owner:** Analytics Engineering Team
 **Steward:** Healthcare Data Steward
 
 | Column | Data Type | Nullable | Classification | Business Definition | Synonyms |
 |--------|-----------|----------|----------------|---------------------|----------|
-| referring_npi | NUMBER(10,0) | No | Confidential | National Provider Identifier (primary key) | NPI, provider_id |
-| provider_name | STRING | Yes | Confidential | Full provider name (concatenated) | name, provider |
-| provider_specialty_desc | STRING | Yes | Internal | Provider specialty | specialty, type |
+| referring_npi | NUMBER | No | Internal | National Provider Identifier (primary key) | NPI, provider_id |
+| provider_last_name | STRING | Yes | Confidential | Provider last name / org name | surname |
+| provider_first_name | STRING | Yes | Confidential | Provider first name | given name |
+| provider_specialty_code | STRING | Yes | Internal | Provider specialty code | specialty code |
+| provider_specialty_desc | STRING | Yes | Internal | Provider specialty description | specialty |
+| provider_specialty_source | STRING | Yes | Internal | Provider specialty source | source |
 | provider_city | STRING | Yes | Internal | Provider city | city |
 | provider_state | STRING | Yes | Public | Provider state | state, location |
 | provider_zip | STRING | Yes | Internal | Provider ZIP code | zip, postal_code |
+| provider_country | STRING | Yes | Public | Provider country | country |
 
 **Business Rules:**
-- Derived from CURATED.DMEPOS_CLAIMS (distinct providers)
-- SCD Type 1: Current state only, no history
+- Implemented as a view over `CURATED.DMEPOS_CLAIMS` (`SELECT DISTINCT ...`)
+- Filters out rows where `referring_npi` is null
+- Provider full name is derived in the semantic model (not stored as a column)
 
 **Quality Rules:**
 - No duplicate NPIs
@@ -275,7 +292,7 @@ This data dictionary serves as the authoritative source for:
 
 **Lineage:**
 - **Source:** CURATED.DMEPOS_CLAIMS
-- **Transformation:** SELECT DISTINCT, name concatenation
+- **Transformation:** SELECT DISTINCT, null filtering
 - **SQL:** sql/transform/build_curated_model.sql
 
 ---
@@ -283,7 +300,7 @@ This data dictionary serves as the authoritative source for:
 ### ANALYTICS.DIM_DEVICE
 
 **Purpose:** Device dimension for analytics
-**Type:** Slowly Changing Dimension (SCD Type 1)
+**Type:** View (dimension)
 **Classification:** Public
 **Owner:** Analytics Engineering Team
 **Steward:** Healthcare Data Steward
@@ -294,19 +311,43 @@ This data dictionary serves as the authoritative source for:
 | brand_name | STRING | Yes | Public | Device brand | brand, manufacturer_name |
 | device_description | STRING | Yes | Public | Device description | description, device_name |
 | company_name | STRING | Yes | Public | Manufacturer | manufacturer, company |
-| device_description_embedding | VECTOR(FLOAT, 1024) | Yes | Internal | Arctic embedding for semantic search | embedding, vector |
+| version_or_model_number | STRING | Yes | Public | Device model/version | model |
+| catalog_number | STRING | Yes | Public | Catalog number | catalog |
+| device_status | STRING | Yes | Public | Device status | status |
+| device_publish_date | DATE | Yes | Public | Publish date | publish date |
+| commercial_distribution_status | STRING | Yes | Public | Distribution status | distribution |
 
 **Business Rules:**
-- Only active devices (commercial_distribution_status = 'In Commercial Distribution')
-- Embeddings generated for semantic similarity search
+- Implemented as a view over `CURATED.GUDID_DEVICES` (`SELECT DISTINCT ...`)
+- Not filtered to "active" devices in the view; downstream search/docs may filter
 
 **Quality Rules:**
-- No duplicate DIs
-- device_description must not be null if embedding exists
+- di_number should be unique where present
+- company_name should be present for records used in search/docs
 
 **Lineage:**
 - **Source:** CURATED.GUDID_DEVICES
-- **Transformation:** Filtering, embedding generation
+- **Transformation:** SELECT DISTINCT
+- **SQL:** sql/transform/build_curated_model.sql
+
+---
+
+### ANALYTICS.DIM_PRODUCT_CODE
+
+**Purpose:** Product code dimension (FDA GUDID product codes)
+**Type:** View
+**Classification:** Public
+**Owner:** Analytics Engineering Team
+
+| Column | Data Type | Nullable | Description |
+|--------|-----------|----------|-------------|
+| primary_di | STRING | Yes | Primary device identifier (DI) |
+| product_code | STRING | Yes | FDA product code |
+| product_code_name | STRING | Yes | FDA product code name |
+
+**Lineage:**
+- **Source:** RAW.RAW_GUDID_PRODUCT_CODES
+- **Transformation:** SELECT DISTINCT, null filtering on product_code
 - **SQL:** sql/transform/build_curated_model.sql
 
 ---
@@ -314,7 +355,7 @@ This data dictionary serves as the authoritative source for:
 ### ANALYTICS.FACT_DMEPOS_CLAIMS
 
 **Purpose:** Analytics-ready fact table for claims analysis
-**Type:** Aggregate Fact Table
+**Type:** View (aggregate fact)
 **Classification:** Public (aggregated)
 **Owner:** Analytics Engineering Team
 **Steward:** Healthcare Data Steward
@@ -322,25 +363,42 @@ This data dictionary serves as the authoritative source for:
 
 | Column | Data Type | Nullable | Classification | Business Definition | Aggregation Type |
 |--------|-----------|----------|----------------|---------------------|------------------|
-| referring_npi | NUMBER(10,0) | No | Confidential | Provider identifier (FK to DIM_PROVIDER) | Dimension |
-| hcpcs_code | STRING | No | Public | HCPCS code | Dimension |
-| provider_specialty_desc_ref | STRING | Yes | Internal | Provider specialty (denormalized) | Dimension |
-| device_brand_name | STRING | Yes | Public | Device brand (joined from DIM_DEVICE) | Dimension |
+| referring_npi | NUMBER | Yes | Internal | Referring provider NPI | Dimension |
+| provider_last_name | STRING | Yes | Confidential | Provider last name / org name | Dimension |
+| provider_first_name | STRING | Yes | Confidential | Provider first name | Dimension |
+| provider_city | STRING | Yes | Internal | Provider city | Dimension |
+| provider_state | STRING | Yes | Public | Provider state | Dimension |
+| provider_zip | STRING | Yes | Internal | Provider ZIP | Dimension |
+| provider_country | STRING | Yes | Public | Provider country | Dimension |
+| provider_specialty_code | STRING | Yes | Internal | Provider specialty code | Dimension |
+| provider_specialty_desc | STRING | Yes | Internal | Provider specialty description | Dimension |
+| provider_specialty_source | STRING | Yes | Internal | Provider specialty source | Dimension |
+| rbcs_level | STRING | Yes | Public | RBCS level | Dimension |
+| rbcs_id | STRING | Yes | Public | RBCS ID | Dimension |
+| rbcs_desc | STRING | Yes | Public | RBCS description | Dimension |
+| hcpcs_code | STRING | Yes | Public | HCPCS code | Dimension |
+| hcpcs_description | STRING | Yes | Public | HCPCS description | Dimension |
+| supplier_rental_indicator | STRING | Yes | Public | Rental flag (Y/N) | Dimension |
+| total_suppliers | NUMBER | Yes | Public | Total suppliers | SUM |
+| total_supplier_benes | NUMBER | Yes | Internal | Total beneficiaries (suppressed if < 11) | SUM |
 | total_supplier_claims | NUMBER | Yes | Public | Total claims | SUM |
 | total_supplier_services | NUMBER | Yes | Public | Total services | SUM |
-| total_supplier_benes | NUMBER | Yes | Confidential | Total beneficiaries (suppressed if < 11) | SUM |
-| avg_supplier_medicare_allowed | NUMBER(10,2) | Yes | Public | Average allowed amount | AVG |
-| avg_supplier_medicare_payment | NUMBER(10,2) | Yes | Public | Average payment | AVG |
+| avg_supplier_submitted_charge | NUMBER(38,4) | Yes | Public | Average submitted charge | AVG |
+| avg_supplier_medicare_allowed | NUMBER(38,4) | Yes | Public | Average Medicare allowed | AVG |
+| avg_supplier_medicare_payment | NUMBER(38,4) | Yes | Public | Average Medicare payment | AVG |
+| avg_supplier_medicare_standard | NUMBER(38,4) | Yes | Public | Average Medicare standardized | AVG |
+| provider_specialty_desc_ref | STRING | Yes | Internal | Specialty description from DIM_PROVIDER join | Dimension |
+| device_brand_name | STRING | Yes | Public | Brand name from DIM_DEVICE join (demo) | Dimension |
 
 **Business Rules:**
-- Enriched with provider details (denormalized for performance)
-- Optional join to DIM_DEVICE via hcpcs_code (demo simplification)
-- Pre-aggregated for fast query performance
+- Implemented as a view over `CURATED.DMEPOS_CLAIMS` with enrichment joins
+- Joins `ANALYTICS.DIM_PROVIDER` on `referring_npi`
+- Joins `ANALYTICS.DIM_DEVICE` on `hcpcs_code = di_number` (demo simplification; may produce sparse matches)
 
 **Quality Rules:**
 - Referential integrity: referring_npi exists in DIM_PROVIDER
-- avg_payment <= avg_allowed
-- total_services >= total_claims
+- avg_supplier_medicare_payment <= avg_supplier_medicare_allowed
+- total_supplier_services >= total_supplier_claims
 
 **Lineage:**
 - **Source:** CURATED.DMEPOS_CLAIMS, ANALYTICS.DIM_PROVIDER, ANALYTICS.DIM_DEVICE
@@ -360,14 +418,18 @@ This data dictionary serves as the authoritative source for:
 
 | Column | Data Type | Nullable | Description |
 |--------|-----------|----------|-------------|
-| hcpcs_code | STRING | No | HCPCS code (primary key) |
-| hcpcs_description | STRING | Yes | Code description |
+| doc_id | STRING | No | Search document identifier (HCPCS code) |
+| doc_type | STRING | No | Document type (fixed: `hcpcs_definition`) |
+| title | STRING | Yes | Short title used in search results |
+| body | STRING | Yes | Searchable text used by Cortex Search |
+| hcpcs_code | STRING | Yes | HCPCS code |
+| hcpcs_description | STRING | Yes | HCPCS description |
+| rbcs_id | STRING | Yes | RBCS ID |
 | supplier_rental_indicator | STRING | Yes | Rental flag (Y/N) |
-| hcpcs_code_lower | STRING | Yes | Lowercase code for search |
 
 **Lineage:**
-- **Source:** CURATED.DMEPOS_CLAIMS
-- **Transformation:** DISTINCT, lowercase normalization
+- **Source:** ANALYTICS.FACT_DMEPOS_CLAIMS
+- **Transformation:** DISTINCT + formatted body/title for search
 - **Downstream:** SEARCH.HCPCS_SEARCH_SVC
 
 ---
@@ -380,15 +442,50 @@ This data dictionary serves as the authoritative source for:
 
 | Column | Data Type | Nullable | Description |
 |--------|-----------|----------|-------------|
-| di_number | STRING | No | Device identifier (primary key) |
-| device_description | STRING | Yes | Device description |
+| doc_id | STRING | No | Search document identifier (public_device_record_key) |
+| doc_type | STRING | No | Document type (fixed: `medical_device`) |
+| title | STRING | Yes | Short title used in search results |
+| body | STRING | Yes | Searchable text used by Cortex Search |
+| di_number | STRING | Yes | Device identifier (DI) |
 | brand_name | STRING | Yes | Brand name |
 | company_name | STRING | Yes | Manufacturer |
+| version_or_model_number | STRING | Yes | Model/version |
+| catalog_number | STRING | Yes | Catalog number |
+| device_description | STRING | Yes | Device description |
 
 **Lineage:**
-- **Source:** ANALYTICS.DIM_DEVICE
-- **Transformation:** SELECT for search attributes
+- **Source:** CURATED.GUDID_DEVICES
+- **Transformation:** Filtering + formatted body/title for search
 - **Downstream:** SEARCH.DEVICE_SEARCH_SVC
+
+---
+
+### SEARCH.PROVIDER_SEARCH_DOCS
+
+**Purpose:** Provider directory search corpus for Cortex Search
+**Classification:** Internal
+**Owner:** AI/ML Engineering Team
+
+| Column | Data Type | Nullable | Description |
+|--------|-----------|----------|-------------|
+| doc_id | STRING | No | Search document identifier (referring_npi) |
+| doc_type | STRING | No | Document type (fixed: `provider_profile`) |
+| title | STRING | Yes | Short title used in search results |
+| body | STRING | Yes | Searchable text used by Cortex Search |
+| referring_npi | NUMBER | Yes | Referring provider NPI |
+| provider_first_name | STRING | Yes | Provider first name |
+| provider_last_name | STRING | Yes | Provider last name |
+| provider_specialty_code | STRING | Yes | Specialty code |
+| provider_specialty_desc | STRING | Yes | Specialty description |
+| provider_city | STRING | Yes | City |
+| provider_state | STRING | Yes | State |
+| provider_zip | STRING | Yes | ZIP |
+| provider_country | STRING | Yes | Country |
+
+**Lineage:**
+- **Source:** ANALYTICS.DIM_PROVIDER
+- **Transformation:** Formatted body/title for search
+- **Downstream:** SEARCH.PROVIDER_SEARCH_SVC
 
 ---
 
@@ -403,15 +500,16 @@ This data dictionary serves as the authoritative source for:
 
 | Column | Data Type | Nullable | Description |
 |--------|-----------|----------|-------------|
-| question_id | STRING | No | Unique question identifier |
-| question_text | STRING | No | Natural language question |
-| expected_sql_pattern | STRING | Yes | Expected SQL pattern for validation |
-| complexity | STRING | Yes | simple, moderate, complex |
-| created_at | TIMESTAMP | No | Creation timestamp |
+| eval_id | STRING | No | Unique eval prompt identifier |
+| category | STRING | Yes | Category grouping (provider/hcpcs/geo/etc.) |
+| question | STRING | No | Natural language question |
+| expected_pattern | STRING | Yes | Expected SQL pattern fragment for validation |
+| notes | STRING | Yes | Optional reviewer notes |
+| created_at | TIMESTAMP_NTZ | No | Creation timestamp |
 
 **Quality Rules:**
-- question_text must be valid natural language
-- complexity must be one of: simple, moderate, complex
+- question must be valid natural language
+- category should be a short, consistent label (e.g., `provider`, `hcpcs`, `geo`)
 
 ---
 
@@ -425,12 +523,13 @@ This data dictionary serves as the authoritative source for:
 | Column | Data Type | Nullable | Description |
 |--------|-----------|----------|-------------|
 | query_id | STRING | No | Unique query identifier |
-| user_name | STRING | Yes | User who executed query |
-| question_text | TEXT | Yes | User's natural language question |
-| generated_sql | TEXT | Yes | AI-generated SQL |
-| was_successful | BOOLEAN | Yes | Query success flag |
-| error_message | TEXT | Yes | Error details if failed |
-| query_timestamp | TIMESTAMP | No | Execution timestamp |
+| user_id | STRING | Yes | User who executed query |
+| question | STRING | Yes | User's natural language question |
+| generated_sql | STRING | Yes | AI-generated SQL |
+| response_tokens | NUMBER | Yes | Token count (if captured by client/app) |
+| latency_ms | NUMBER | Yes | End-to-end latency (if captured by client/app) |
+| success_flag | BOOLEAN | Yes | Query success flag |
+| created_at | TIMESTAMP_NTZ | No | Execution timestamp |
 
 **Compliance:**
 - PII scrubbed from logs
@@ -438,7 +537,44 @@ This data dictionary serves as the authoritative source for:
 
 ---
 
+### INTELLIGENCE.ANALYST_RESPONSE_LOG
+
+**Purpose:** Stores summarized answers and fallback notes (optional)
+**Classification:** Internal
+**Owner:** AI/ML Engineering Team
+**Retention:** 1 year
+
+| Column | Data Type | Nullable | Description |
+|--------|-----------|----------|-------------|
+| query_id | STRING | No | Foreign key to `ANALYST_QUERY_LOG.query_id` |
+| answer_summary | STRING | Yes | Short answer summary text |
+| fallback_used | BOOLEAN | Yes | Whether a fallback path was used |
+| notes | STRING | Yes | Optional debugging notes |
+| created_at | TIMESTAMP_NTZ | No | Creation timestamp |
+
+---
+
 ## Data Dictionary: GOVERNANCE Layer
+
+### GOVERNANCE.DATASET_METADATA
+
+**Purpose:** Dataset-level metadata (grain, refresh, ownership)
+**Classification:** Internal
+**Owner:** Data Governance Team
+
+| Column | Data Type | Nullable | Description |
+|--------|-----------|----------|-------------|
+| dataset_name | STRING | Yes | Dataset identifier |
+| description | STRING | Yes | Dataset description |
+| grain | STRING | Yes | Declared grain (free text) |
+| source_system | STRING | Yes | Source system name |
+| refresh_frequency | STRING | Yes | Refresh frequency (ad hoc/monthly/etc.) |
+| freshness_sla_hours | NUMBER | Yes | Freshness SLA in hours |
+| owner | STRING | Yes | Owning team/person |
+| quality_score | NUMBER(5,2) | Yes | Optional quality score |
+| governance_notes | STRING | Yes | Notes and handling guidance |
+| created_at | TIMESTAMP_NTZ | No | Creation timestamp |
+| updated_at | TIMESTAMP_NTZ | No | Last update timestamp |
 
 ### GOVERNANCE.COLUMN_METADATA
 
@@ -448,26 +584,35 @@ This data dictionary serves as the authoritative source for:
 
 | Column | Data Type | Nullable | Description |
 |--------|-----------|----------|-------------|
-| schema_name | STRING | No | Schema name |
-| table_name | STRING | No | Table name |
+| dataset_name | STRING | No | Dataset identifier (e.g., `DMEPOS_CLAIMS`) |
 | column_name | STRING | No | Column name |
-| business_name | STRING | Yes | Business-friendly name |
+| data_type | STRING | Yes | Snowflake data type (as a string) |
 | business_definition | STRING | Yes | Business definition |
-| data_type | STRING | Yes | Snowflake data type |
-| is_pii | BOOLEAN | Yes | Contains PII flag |
-| contains_phi | BOOLEAN | Yes | Contains PHI flag |
-| gdpr_classification | STRING | Yes | GDPR classification |
-| data_classification | STRING | Yes | Public, Internal, Confidential, Restricted |
-| valid_values | STRING | Yes | List of valid values |
-| sample_values | STRING | Yes | Example values |
-| owner | STRING | Yes | Data owner |
-| steward | STRING | Yes | Data steward |
-| created_at | TIMESTAMP | No | Record creation timestamp |
-| updated_at | TIMESTAMP | No | Last update timestamp |
+| allowed_values | STRING | Yes | Allowed values/patterns |
+| sensitivity | STRING | Yes | `public`, `internal`, `confidential`, `restricted` |
+| example_value | STRING | Yes | Example value |
+| created_at | TIMESTAMP_NTZ | No | Record creation timestamp |
+| updated_at | TIMESTAMP_NTZ | No | Last update timestamp |
 
 **Population:**
-- Manually curated for all CURATED and ANALYTICS tables
-- Reviewed quarterly
+- Seeded by `sql/governance/metadata_and_quality.sql` (example entries)
+- Intended for iterative improvement as the semantic model evolves
+
+---
+
+### GOVERNANCE.SENSITIVITY_POLICY
+
+**Purpose:** Convenience view mapping column sensitivity to handling instructions
+**Classification:** Internal
+**Owner:** Data Governance Team
+
+| Column | Data Type | Nullable | Description |
+|--------|-----------|----------|-------------|
+| table_name | STRING | Yes | Dataset/table name |
+| column_name | STRING | Yes | Column name |
+| sensitivity_level | STRING | Yes | Sensitivity level |
+| handling_instructions | STRING | Yes | Handling instructions derived from sensitivity |
+| business_definition | STRING | Yes | Business definition |
 
 ---
 
@@ -479,13 +624,11 @@ This data dictionary serves as the authoritative source for:
 
 | Column | Data Type | Nullable | Description |
 |--------|-----------|----------|-------------|
-| target_schema | STRING | No | Downstream schema |
-| target_table | STRING | No | Downstream table |
-| source_schema | STRING | No | Upstream schema |
-| source_table | STRING | No | Upstream table |
-| transformation_type | STRING | Yes | direct_copy, filter, aggregate, join, enrich |
-| transformation_sql | TEXT | Yes | SQL script reference |
-| last_refresh | TIMESTAMP | Yes | Last refresh timestamp |
+| dataset_name | STRING | No | Dataset identifier |
+| upstream_source | STRING | Yes | Upstream source reference (free text) |
+| transformation_script | STRING | Yes | SQL/script path (free text) |
+| notes | STRING | Yes | Notes about transformations or assumptions |
+| created_at | TIMESTAMP_NTZ | No | Record creation timestamp |
 
 **Use Cases:**
 - Impact analysis for schema changes
@@ -503,14 +646,13 @@ This data dictionary serves as the authoritative source for:
 | Column | Data Type | Nullable | Description |
 |--------|-----------|----------|-------------|
 | check_id | STRING | No | Unique check identifier |
-| schema_name | STRING | No | Target schema |
-| table_name | STRING | No | Target table |
-| check_type | STRING | No | row_count, null_check, uniqueness, referential_integrity |
-| check_sql | TEXT | No | SQL for quality check |
-| severity | STRING | No | critical, warning, info |
-| last_run | TIMESTAMP | Yes | Last execution timestamp |
-| last_result | STRING | Yes | pass, fail |
-| fail_count | NUMBER | Yes | Count of failures |
+| table_name | STRING | No | Target table name (e.g., `CURATED.DMEPOS_CLAIMS`) |
+| check_name | STRING | Yes | Short check name |
+| check_description | STRING | Yes | Longer description |
+| check_sql | STRING | No | SQL for the check |
+| severity | STRING | Yes | Severity level (free text) |
+| owner | STRING | Yes | Owning team/person (free text) |
+| created_at | TIMESTAMP_NTZ | No | Creation timestamp |
 
 **Quality Check Types:**
 1. **Row Count:** Minimum expected rows
@@ -519,6 +661,43 @@ This data dictionary serves as the authoritative source for:
 4. **Referential Integrity:** Foreign keys must exist
 5. **Range Check:** Values within expected ranges
 6. **Pattern Match:** Values match expected patterns (e.g., NPI format)
+
+---
+
+### GOVERNANCE.DATA_QUALITY_RESULTS
+
+**Purpose:** Stores execution results for data quality checks
+**Classification:** Internal
+**Owner:** Data Quality Team
+
+| Column | Data Type | Nullable | Description |
+|--------|-----------|----------|-------------|
+| check_id | STRING | No | Foreign key to `DATA_QUALITY_CHECKS.check_id` |
+| run_id | STRING | Yes | Run identifier (batch/job id) |
+| run_ts | TIMESTAMP_NTZ | No | Run timestamp |
+| status | STRING | Yes | pass/fail (or custom) |
+| metric_value | NUMBER | Yes | Numeric metric value returned by the check |
+| expected_threshold | STRING | Yes | Threshold definition (free text) |
+| notes | STRING | Yes | Optional notes |
+
+---
+
+### GOVERNANCE.AGENT_HINTS
+
+**Purpose:** Optional hints for analysts/agents (filters, joins, query patterns)
+**Classification:** Internal
+**Owner:** Data Governance Team
+
+| Column | Data Type | Nullable | Description |
+|--------|-----------|----------|-------------|
+| hint_id | STRING | No | Unique hint id (UUID) |
+| hint_category | STRING | Yes | Category (geographic/hcpcs/payment/etc.) |
+| hint_name | STRING | Yes | Short hint name |
+| hint_description | STRING | Yes | Human-readable description |
+| hint_sql_fragment | STRING | Yes | SQL fragment to apply |
+| use_when | STRING | Yes | When to use the hint |
+| priority | NUMBER | Yes | Priority (1 = highest) |
+| created_at | TIMESTAMP_NTZ | No | Creation timestamp |
 
 ---
 
@@ -552,8 +731,8 @@ This data dictionary serves as the authoritative source for:
 
 ### Accuracy Rules
 
-1. **Payment hierarchy:** avg_payment <= avg_allowed <= avg_submitted_charge
-2. **Service/claim relationship:** total_services >= total_claims
+1. **Payment hierarchy:** avg_supplier_medicare_payment <= avg_supplier_medicare_allowed <= avg_supplier_submitted_charge
+2. **Service/claim relationship:** total_supplier_services >= total_supplier_claims
 3. **NPI validation:** 10-digit numeric, valid per NPPES
 4. **State validation:** Must be valid US state abbreviation
 5. **Date validation:** All dates must be <= current date

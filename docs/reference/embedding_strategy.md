@@ -346,8 +346,10 @@ SELECT * FROM TABLE(
 ### Step 2: Drop Manual Embedding Columns
 
 ```sql
--- If Cortex Search meets needs, drop manual embeddings
-ALTER TABLE ANALYTICS.DIM_DEVICE DROP COLUMN device_description_embedding;
+-- This repo does not create manual embedding columns by default.
+-- If you experimented with a custom embedding column, you can drop it after moving to Cortex Search.
+-- Example (adjust column name to your experiment):
+-- ALTER TABLE ANALYTICS.DIM_DEVICE DROP COLUMN <your_embedding_column>;
 ```
 
 ### Step 3: Update Queries

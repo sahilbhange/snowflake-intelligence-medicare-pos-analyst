@@ -19,8 +19,8 @@ Before starting, ensure:
 ## Step 1: Access Snowflake Intelligence
 
 1. Log in to Snowsight
-2. Navigate to **AI & ML** → **Snowflake Intelligence** (in left sidebar)
-3. Click **Get Started** if this is your first time
+2. Navigate to **AI & ML** → **Agents** (in left sidebar)
+3. Click **Create Agent** if this is your first time
 
 **Screenshot placeholder:** Snowsight navigation to Snowflake Intelligence
 
@@ -48,16 +48,17 @@ Before starting, ensure:
 **For Option B (Stage Reference):**
 ```sql
 -- First, upload to stage
-CREATE STAGE IF NOT EXISTS ANALYTICS.SEMANTIC_MODELS;
+-- This is the stage used by the agent workflow in `sql/agent/cortex_agent.sql`.
+CREATE STAGE IF NOT EXISTS ANALYTICS.CORTEX_SEM_MODEL_STG;
 
 PUT file://models/DMEPOS_SEMANTIC_MODEL.yaml
-  @ANALYTICS.SEMANTIC_MODELS
+  @ANALYTICS.CORTEX_SEM_MODEL_STG
   AUTO_COMPRESS=FALSE
   OVERWRITE=TRUE;
 
 -- Then in Snowflake Intelligence UI:
 1. Select "From Stage"
-2. Stage: ANALYTICS.SEMANTIC_MODELS
+2. Stage: ANALYTICS.CORTEX_SEM_MODEL_STG
 3. File: DMEPOS_SEMANTIC_MODEL.yaml
 4. Name: "Medicare DMEPOS Claims"
 5. Click "Create"
@@ -143,17 +144,17 @@ Snowflake Intelligence automatically routes questions to the appropriate source.
 ```sql
 -- Grant usage on search services
 GRANT USAGE ON CORTEX SEARCH SERVICE SEARCH.HCPCS_SEARCH_SVC
-  TO ROLE MEDICARE_POS_USER;
+  TO ROLE <consumer_role>;
 
 GRANT USAGE ON CORTEX SEARCH SERVICE SEARCH.DEVICE_SEARCH_SVC
-  TO ROLE MEDICARE_POS_USER;
+  TO ROLE <consumer_role>;
 
 GRANT USAGE ON CORTEX SEARCH SERVICE SEARCH.PROVIDER_SEARCH_SVC
-  TO ROLE MEDICARE_POS_USER;
+  TO ROLE <consumer_role>;
 
 -- Grant usage on semantic model stage
-GRANT USAGE ON STAGE ANALYTICS.SEMANTIC_MODELS
-  TO ROLE MEDICARE_POS_USER;
+GRANT READ ON STAGE ANALYTICS.CORTEX_SEM_MODEL_STG
+  TO ROLE <consumer_role>;
 ```
 
 ---
@@ -327,4 +328,4 @@ After setup, verify:
 3. Testing 3 sample questions
 4. Showing results
 
-**See:** [Video Recording Guide](../../medium/claude/video_recording_guide.md)
+> Note: No video guide is included in this repo; this section is just a placeholder reminder.

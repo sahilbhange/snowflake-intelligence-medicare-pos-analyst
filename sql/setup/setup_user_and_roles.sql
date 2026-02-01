@@ -31,6 +31,11 @@ create schema if not exists MEDICARE_POS_DB.CURATED
 create schema if not exists MEDICARE_POS_DB.ANALYTICS
   comment = 'Gold layer: dimension and fact views for analytics';
 
+-- Semantic model stage (used for Cortex Analyst / Agent workflows).
+-- Keeping it here avoids "grant on missing stage" errors later in `sql/setup/apply_grants.sql`.
+create stage if not exists MEDICARE_POS_DB.ANALYTICS.CORTEX_SEM_MODEL_STG
+  comment = 'Stage for Cortex Analyst semantic model YAML files';
+
 create schema if not exists MEDICARE_POS_DB.SEARCH
   comment = 'Cortex Search document tables and services';
 
@@ -63,7 +68,7 @@ grant select on all tables in schema MEDICARE_POS_DB.ANALYTICS to role MEDICARE_
 grant select on future tables in schema MEDICARE_POS_DB.ANALYTICS to role MEDICARE_POS_INTELLIGENCE;
 grant select on all views in schema MEDICARE_POS_DB.ANALYTICS to role MEDICARE_POS_INTELLIGENCE;
 grant select on future views in schema MEDICARE_POS_DB.ANALYTICS to role MEDICARE_POS_INTELLIGENCE;
-grant create table, create view on schema MEDICARE_POS_DB.ANALYTICS to role MEDICARE_POS_INTELLIGENCE;
+grant create table, create view, create stage on schema MEDICARE_POS_DB.ANALYTICS to role MEDICARE_POS_INTELLIGENCE;
 
 -- SEARCH schema grants
 grant usage on schema MEDICARE_POS_DB.SEARCH to role MEDICARE_POS_INTELLIGENCE;
@@ -92,7 +97,7 @@ grant create table, create view on schema MEDICARE_POS_DB.GOVERNANCE to role MED
 -- Warehouse grants
 grant usage, operate on warehouse MEDICARE_POS_WH to role MEDICARE_POS_INTELLIGENCE;
 
--- 4) Bind user defaults (SECURITYADMIN)
+-- 4) Bind user defaults (SECURITYADMIN) (Optional)
 -- Make sure target_user is set to an existing user.
 
 alter user identifier($target_user)

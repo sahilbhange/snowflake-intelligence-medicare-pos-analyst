@@ -206,18 +206,11 @@ PAYMENT_TO_ALLOWED_RATIO
 
 **Example code:**
 ```sql
--- Generate embeddings
-UPDATE DIM_DEVICE
-SET embedding = SNOWFLAKE.CORTEX.EMBED_TEXT_1024(
-  'snowflake-arctic-embed-l',
-  device_description
+-- This repo uses Cortex Search (no manual embedding columns by default).
+-- See: sql/search/cortex_search_devices.sql
+SELECT * FROM TABLE(
+  SEARCH.DEVICE_SEARCH_SVC!SEARCH('oxygen concentrator', LIMIT => 10)
 );
-
--- Vector similarity search
-SELECT device_name,
-  VECTOR_COSINE_SIMILARITY(embedding, query_embedding) AS score
-FROM DIM_DEVICE
-ORDER BY score DESC LIMIT 10;
 ```
 
 ---
@@ -461,37 +454,9 @@ Notes: Perfect match, SQL optimal
 
 ---
 
-## Archived Files (4 files)
+## Archived Files
 
-Located in [archive/](archive/) folder. These are older docs replaced by newer, more comprehensive versions.
-
-### [architecture.md](archive/architecture.md)
-**Why archived:** Replaced by [data_model.md](implementation/data_model.md) which has more complete ERD and schema details.
-
-**What it had:** Basic scaffold of data flow, simple table list, placeholder for diagrams.
-
----
-
-### [data_dictionary.md](archive/data_dictionary.md)
-**Why archived:** Replaced by [metric_catalog.md](reference/metric_catalog.md) which has detailed metric definitions, edge cases, and business context.
-
-**What it had:** Basic column definitions, source table descriptions, minimal glossary.
-
----
-
-### [project_overview.md](archive/project_overview.md)
-**Why archived:** Replaced by [getting-started.md](implementation/getting-started.md) which has complete deployment instructions and verification steps.
-
-**What it had:** High-level overview, dataset descriptions, basic architecture notes.
-
----
-
-### [next_steps.md](archive/next_steps.md)
-**Why archived:** Content was outdated. Future roadmap is now in Medium articles.
-
-**What it had:** Old todo list from initial project phases.
-
----
+This repo does not keep an `docs/archive/` folder. If you’re looking for older scaffolds, use `git log -- docs/` to browse history.
 
 ## Supporting Files
 
@@ -573,14 +538,13 @@ Located in [archive/](archive/) folder. These are older docs replaced by newer, 
 | Category | Files | Total Words (approx) |
 |----------|-------|---------------------|
 | Implementation | 3 | ~8,000 |
-| Reference | 4 | ~12,000 |
-| Governance | 4 | ~7,000 |
-| Navigation | 2 | ~3,000 |
-| **TOTAL** | **13** | **~30,000** |
+| Reference | 5 | ~12,000 |
+| Governance | 5 | ~8,000 |
+| Navigation | 3 | ~4,000 |
+| **TOTAL** | **16** | **~32,000** |
 
 Plus:
 - 2 diagrams (PNG)
-- 4 archived files (preserved for reference)
 - 4 Medium articles (~35,500 words)
 
-**Grand total documentation:** ~65,500 words across 23 files
+**Grand total documentation:** ~67,500 words across 20 files

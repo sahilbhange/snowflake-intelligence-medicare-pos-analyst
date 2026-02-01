@@ -45,13 +45,7 @@ Complete reference for all project files and their purposes.
 | `docs/diagrams/datamodel.png` | Entity-relationship diagram |
 | `docs/diagrams/cortex-search-rag.png` | Search + RAG architecture |
 
-### Archive
-
-| File | Purpose | Replaced By |
-|------|---------|-------------|
-| `docs/archive/architecture.md` | Old architecture notes | `docs/implementation/data_model.md` |
-| `docs/archive/data_dictionary.md` | Old data dictionary | `docs/reference/metric_catalog.md` |
-| `docs/archive/project_overview.md` | Old overview | `docs/implementation/getting-started.md` |
+> Note: This repo does not keep a `docs/archive/` folder. Use `git log -- docs/` to browse older doc versions.
 
 ---
 
@@ -61,9 +55,10 @@ Complete reference for all project files and their purposes.
 
 | File | Purpose | When to Run |
 |------|---------|------------|
-| `sql/setup/00_init_warehouse.sql` | Create warehouse and roles | During initial setup |
-| `sql/setup/10_create_schema.sql` | Create databases and schemas | During initial setup |
-| `sql/setup/20_setup_grants.sql` | Grant permissions to roles | During initial setup |
+| `sql/setup/setup_user_and_roles.sql` | Create role, warehouse, DB, schemas, and base grants | During initial setup |
+| `sql/setup/apply_grants.sql` | Post-creation grants for views/search/stage | After objects exist |
+| `sql/setup/pdf_stage_setup.sql` | Optional: stage + load PDF sources | Before `make search-pdf` |
+| `sql/setup/pdf_search_validation.sql` | Optional: validate PDF search coverage | After `make search-pdf` |
 
 ### Data Ingestion
 
@@ -71,12 +66,11 @@ Complete reference for all project files and their purposes.
 |------|---------|------------|
 | `sql/ingestion/load_raw_data.sql` | Load CMS/FDA data from stages | After `make data` download |
 
-### Semantic Model & Analytics
+### Transform (Curated + Analytics)
 
 | File | Purpose | When to Run |
 |------|---------|------------|
-| `sql/analytics/create_base_views.sql` | Create base dimension/fact views | During `make setup` |
-| `sql/analytics/create_semantic_model_view.sql` | Create view for semantic model | During `make model` |
+| `sql/transform/build_curated_model.sql` | Build curated tables and analytics views | During `make model` |
 
 ### Cortex Search Services
 
@@ -146,13 +140,14 @@ snowflake-intelligence-medicare-pos-analyst/
 │   ├── reference/ (technical docs)
 │   ├── governance/ (versioning & QA)
 │   ├── diagrams/ (architecture images)
-│   └── archive/ (outdated docs)
 │
 ├── sql/
 │   ├── setup/ (initialization scripts)
 │   ├── ingestion/ (data loading)
-│   ├── analytics/ (views & models)
+│   ├── transform/ (curated tables + analytics views)
 │   ├── search/ (Cortex Search services)
+│   ├── intelligence/ (instrumentation, evals, validation, tests)
+│   ├── governance/ (metadata, lineage, data quality)
 │   └── agent/ (Cortex Agent creation)
 │
 ├── models/
@@ -177,13 +172,13 @@ snowflake-intelligence-medicare-pos-analyst/
 
 ```mermaid
 graph TD
-    A["1. 00_init_warehouse.sql"] --> B["2. 10_create_schema.sql"]
-    B --> C["3. 20_setup_grants.sql"]
-    C --> D["4. Download data using Makefile"]
-    D --> E["5. load_raw_data.sql"]
-    E --> F["6. create_base_views.sql"]
-    F --> G["7. create_semantic_model_view.sql"]
-    G --> H["8. cortex_search_hcpcs.sql<br/>cortex_search_devices.sql<br/>cortex_search_providers.sql"]
+    A["1. setup_user_and_roles.sql"] --> B["2. Download data (make data)"]
+    B --> C["3. load_raw_data.sql"]
+    C --> D["4. build_curated_model.sql"]
+    D --> E["5. cortex_search_hcpcs.sql<br/>cortex_search_devices.sql<br/>cortex_search_providers.sql"]
+    E --> F["6. metadata_and_quality.sql"]
+    F --> G["7. instrumentation.sql / eval_seed.sql"]
+    G --> H["8. validation_framework.sql / semantic_model_tests.sql"]
     H --> I["9. Optional: pdf_stage_setup.sql<br/>cortex_search_pdf.sql"]
     I --> J["10. Optional: cortex_agent.sql"]
 ```
@@ -200,7 +195,7 @@ graph TD
 ### "I need to understand the data model"
 - `docs/implementation/data_model.md`
 - `docs/diagrams/datamodel.png`
-- `sql/analytics/create_base_views.sql` (see table definitions)
+- `sql/transform/build_curated_model.sql` (see table/view definitions)
 
 ### "I need to create a Cortex Agent"
 - `docs/reference/cortex_agent_creation.md`

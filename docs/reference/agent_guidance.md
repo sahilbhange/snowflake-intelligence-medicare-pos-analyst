@@ -124,7 +124,8 @@ For programmatic agent guidance, query the hints table:
 
 ```sql
 -- Example: Get hints for common query patterns
-SELECT * FROM ANALYTICS.AGENT_HINTS
+-- Note: hints are stored in the GOVERNANCE schema in this project.
+SELECT * FROM GOVERNANCE.AGENT_HINTS
 WHERE hint_category = 'geographic';
 ```
 
@@ -188,5 +189,5 @@ WHERE hint_category = 'geographic';
 ## Related Documentation
 
 - [Metric Catalog](metric_catalog.md) - Metric definitions
-- [Data Dictionary](data_dictionary.md) - Column definitions
-- [Semantic Model Lifecycle](semantic_model_lifecycle.md) - Model versioning
+- [Data Dictionary](../governance/data_dictionary.md) - Column definitions
+- [Semantic Model Lifecycle](../governance/semantic_model_lifecycle.md) - Model versioning

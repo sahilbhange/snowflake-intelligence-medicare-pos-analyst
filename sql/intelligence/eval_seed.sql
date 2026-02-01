@@ -38,7 +38,7 @@ values
   ('Q12', 'general', 'Which HCPCS codes have highest avg submitted charge?', 'order by avg_supplier_submitted_charge desc', null),
   ('Q13', 'general', 'List provider specialties by count of claims', 'group by provider_specialty_desc', null),
   ('Q14', 'general', 'Total supplier services for rentals only', 'where supplier_rental_indicator = ''Y''', null),
-  ('Q15', 'general', 'Total supplier claims per provider', 'group by provider_npi', null),
+  ('Q15', 'general', 'Total supplier claims per provider', 'group by referring_npi', null),
   ('Q16', 'hcpcs', 'Top 5 HCPCS codes by total supplier claims', 'group by hcpcs_code order by total_supplier_claims desc limit 5', 'Use overall claims to surface highest-volume codes.'),
   ('Q17', 'geo', 'Top 5 states by average Medicare allowed', 'group by provider_state order by avg_supplier_medicare_allowed desc limit 5', 'Highlights geographic variation in allowed amounts.'),
   ('Q18', 'provider', 'Top 5 specialties by provider count in claims', 'group by provider_specialty_desc order by count(*) desc limit 5', 'Counts rows grouped by specialty.'),
