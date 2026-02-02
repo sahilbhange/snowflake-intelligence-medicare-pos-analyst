@@ -2,6 +2,8 @@
 
 **Building the DMEPOS Intelligence Agent in Snowsight UI**
 
+> **Alternative Approach:** Prefer SQL/automation? See [cortex_agent.sql](cortex_agent.sql) for infrastructure-as-code deployment.
+
 This document describes how the **DMEPOS_INTELLIGENCE_AGENT** was built using **Snowflake Snowsight UI**, including its purpose, example questions, tool configuration, orchestration logic, and response behavior.
 
 The goal of this agent is to enable **natural-language analytics over Medicare DMEPOS data** by combining semantic search with governed, metrics-driven analysis.

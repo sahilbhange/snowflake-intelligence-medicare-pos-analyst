@@ -177,6 +177,24 @@ This includes:
 
 **Deep dive:** [The Intelligence Layer - How AI Understands Your Data](#) (Subarticle 1)
 
+### Building the Agent: Two Approaches
+
+You have two paths to create your Snowflake Intelligence agent:
+
+**Option 1: Snowsight UI** (Recommended for getting started)
+- Point-and-click interface in Snowflake's web UI
+- Visual tool configuration with guided forms
+- Perfect for learning and prototyping
+- Guide: [sql/agent/build_agent.md](https://github.com/sahilbhange/snowflake-intelligence-medicare-pos-analyst/blob/main/sql/agent/build_agent.md)
+
+**Option 2: SQL Script** (Recommended for production/automation)
+- Infrastructure as code approach
+- Version control friendly
+- CI/CD integration ready
+- Guide: [sql/agent/cortex_agent.sql](https://github.com/sahilbhange/snowflake-intelligence-medicare-pos-analyst/blob/main/sql/agent/cortex_agent.sql)
+
+Both approaches create identical agents with the same capabilities—choose based on your workflow preference.
+
 ---
 
 ### 🏗️ Layer 2: The Foundation Layer
@@ -505,7 +523,7 @@ Production readiness: governance, data quality, evaluation frameworks, model ver
 
 All code, SQL, semantic models, and documentation:
 
-**[Snowflake Intelligence Medicare POS Analyst](https://github.com/YOUR_USERNAME/snowflake-intelligence-medicare-pos-analyst)**
+**[Snowflake Intelligence Medicare POS Analyst](https://github.com/sahilbhange/snowflake-intelligence-medicare-pos-analyst)**
 
 Includes:
 - Complete data pipeline (ingestion → curated → analytics)
@@ -563,7 +581,7 @@ Build all three, and you'll have a data platform that actually understands your 
 
 **If you're skeptical:**
 1. Watch the [demo video](#)
-2. Try the [live example queries](#)
+2. Try the [example queries](https://github.com/sahilbhange/snowflake-intelligence-medicare-pos-analyst/blob/main/docs/reference/demo_queries.md)
 3. Ask questions in the comments
 
 **If you're already doing this:**
@@ -597,10 +615,10 @@ Drop a comment below. I read and respond to every one.
 ---
 
 **🔗 Resources:**
-- [GitHub Repository](https://github.com/YOUR_USERNAME/snowflake-intelligence-medicare-pos-analyst)
+- [GitHub Repository](https://github.com/sahilbhange/snowflake-intelligence-medicare-pos-analyst)
 - [Snowflake Cortex Documentation](https://docs.snowflake.com/en/user-guide/snowflake-cortex)
 - [CMS DMEPOS Data](https://data.cms.gov/)
-- [Connect on LinkedIn](#)
+- [Connect on LinkedIn](https://www.linkedin.com/in/sahil-bhange/)
 
 ---
 

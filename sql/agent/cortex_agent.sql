@@ -1,8 +1,10 @@
 use role MEDICARE_POS_INTELLIGENCE;
 
 -- ============================================================================
--- Cortex Agent for Medicare DMEPOS Analytics
+-- Cortex Agent for Medicare DMEPOS Analytics (SQL Approach)
 -- ============================================================================
+--
+-- ALTERNATIVE: Prefer UI approach? See build_agent.md for Snowsight UI guide.
 --
 -- LEARN ABOUT THIS:
 --   📖 Concept overview: medium/claude/subarticle_1_intelligence_layer.md
