@@ -1,5 +1,21 @@
--- Project bootstrap: role, warehouse, database, schemas, user defaults.
--- Update target_user if you want to bind a different Snowflake user.
+-- ============================================================================
+-- Bootstrap: Role, Warehouse, Database, Schemas & User Defaults
+-- ============================================================================
+--
+-- LEARN ABOUT THIS:
+--   📖 Project architecture: medium/claude/architecture_overview.md
+--   📚 Medallion architecture: docs/reference/medallion_architecture.md
+--   📚 Role-based access control: docs/reference/rbac_setup.md
+--   📚 Schema organization: docs/reference/schema_structure.md
+--   🚀 Getting started: docs/implementation/getting-started.md
+--
+-- ============================================================================
+-- BEFORE RUNNING:
+-- 1. Ensure you have SECURITYADMIN and SYSADMIN roles in Snowflake account
+-- 2. Update target_user variable below to match your Snowflake username
+-- 3. Run this FIRST before any other SQL scripts in sql/setup/
+--
+-- ============================================================================
 
 set target_user = 'YOUR_USER';
 

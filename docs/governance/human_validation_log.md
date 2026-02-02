@@ -26,6 +26,19 @@ This log captures human-in-the-loop validation to ensure Snowflake Intelligence 
 
 ---
 
+## Demo Shortcut (15–30 minutes)
+
+If you’re following the Medium hands-on demo, you can keep human validation lightweight:
+
+1. Build **one** Snowsight dashboard (Provider or HCPCS) as a “ground truth” reference.
+2. Test **5 questions** in Cortex Analyst (3 simple, 2 moderate).
+3. Record only:
+   - the question
+   - the SQL generated (if available)
+   - whether the result “looks right”
+
+Use the full sections below when you want a repeatable validation process for production.
+
 ## Dashboard Checklist
 
 Build 3 reference dashboards in Snowsight to serve as ground truth for AI validation.

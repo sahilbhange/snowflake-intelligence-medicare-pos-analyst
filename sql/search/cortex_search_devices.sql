@@ -1,4 +1,21 @@
--- Cortex Search service for medical device catalog entries (GUDID).
+-- ============================================================================
+-- Cortex Search Service for Medical Device Catalog (FDA GUDID)
+-- ============================================================================
+--
+-- LEARN ABOUT THIS:
+--   📖 Search concepts: medium/claude/subarticle_1_intelligence_layer.md#search-services
+--   📚 Reference guide: docs/reference/embedding_strategy.md
+--   📚 FDA GUDID data: docs/reference/device_catalog.md
+--   📚 Agent integration: docs/reference/cortex_agent_creation.md
+--   🚀 Getting started: docs/implementation/getting-started.md
+--
+-- ============================================================================
+-- BEFORE RUNNING:
+-- 1. Ensure CURATED.GUDID_DEVICES is created (run: make model)
+-- 2. Verify device data exists: SELECT COUNT(*) FROM CURATED.GUDID_DEVICES;
+-- 3. After creation, validate in Snowflake UI: SEARCH > DEVICE_SEARCH_SVC > Playground > Search('Wheelchair')
+--
+-- ============================================================================
 
 use role MEDICARE_POS_INTELLIGENCE;
 use database MEDICARE_POS_DB;

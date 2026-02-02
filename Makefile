@@ -9,7 +9,7 @@ SNOW ?= snow
 SNOW_OPTS ?= sql -c sf_int
 SNOW_CMD = $(SNOW) $(SNOW_OPTS)
 
-.PHONY: data setup load model search pdf-setup search-pdf pdf-validate instrumentation metadata profile validation knowledge-graph tests agent grants \
+.PHONY: data setup load model search pdf-setup search-pdf pdf-validate instrumentation metadata metadata-demo profile profile-demo governance-demo validation knowledge-graph tests agent grants \
         demo deploy-all verify rebuild-model rebuild-search clean-tests teardown help
 
 # ============================================================================
@@ -89,11 +89,26 @@ metadata:
 	$(SNOW_CMD) -f sql/governance/metadata_and_quality.sql
 	@echo "✅ Metadata catalog created"
 
+# Demo-friendly metadata (smaller surface area for the Medium walkthrough).
+metadata-demo:
+	@echo "📊 Setting up demo metadata catalog..."
+	$(SNOW_CMD) -f sql/governance/metadata_demo.sql
+	@echo "✅ Demo metadata catalog created"
+
 # Run data profiling (baseline row counts, null rates, distributions).
 profile:
 	@echo "📈 Running data profiling..."
 	$(SNOW_CMD) -f sql/governance/run_profiling.sql
 	@echo "✅ Data profiling complete (check GOVERNANCE.DATA_PROFILE_RESULTS)"
+
+# Demo-friendly profiling (small set of trust signals).
+profile-demo:
+	@echo "📈 Running demo data profiling..."
+	$(SNOW_CMD) -f sql/governance/profile_demo.sql
+	@echo "✅ Demo profiling complete (check GOVERNANCE.DATA_PROFILE_RESULTS)"
+
+# Demo governance chain (keeps the Medium flow simple).
+governance-demo: metadata-demo profile-demo
 
 # Create query logging and evaluation seed tables.
 instrumentation:
@@ -276,7 +291,10 @@ help:
 	@echo ""
 	@echo "📊 GOVERNANCE & MONITORING:"
 	@echo "  make metadata          Create metadata catalog and lineage"
+	@echo "  make metadata-demo     Demo: minimal metadata + sensitivity policy"
 	@echo "  make profile           Run data profiling (baseline)"
+	@echo "  make profile-demo      Demo: lightweight profiling"
+	@echo "  make governance-demo   Demo: metadata-demo + profile-demo"
 	@echo "  make instrumentation   Create query logging and eval seeds"
 	@echo "  make knowledge-graph   Build knowledge graph entities"
 	@echo ""

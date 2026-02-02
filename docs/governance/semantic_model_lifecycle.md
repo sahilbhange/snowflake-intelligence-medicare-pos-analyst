@@ -100,6 +100,7 @@ Current version: `1.1.0` (matches `models/DMEPOS_SEMANTIC_MODEL.yaml`)
 
 Before any version is published:
 
+> **Demo note:** For the Medium walkthrough, you can use `make governance-demo` to generate lightweight trust signals (sensitivity policy + profiling) without running the full governance templates.
 
 > **💾 Reference:** Run tests from [semantic_model_tests.sql](../../sql/intelligence/semantic_model_tests.sql)
 

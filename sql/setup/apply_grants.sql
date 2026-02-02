@@ -1,5 +1,22 @@
--- Post-creation grants for demo roles after objects exist.
--- Run this AFTER all SQL scripts have been executed.
+-- ============================================================================
+-- Post-Deployment Grants Configuration
+-- ============================================================================
+--
+-- LEARN ABOUT THIS:
+--   📖 Access control patterns: medium/claude/security_patterns.md#rbac
+--   📚 Grant management: docs/reference/rbac_setup.md#grant-hierarchy
+--   📚 Cortex service grants: docs/reference/cortex_permissions.md
+--   📚 Schema permissions: docs/reference/schema_structure.md#permissions
+--   🚀 Getting started: docs/implementation/getting-started.md
+--
+-- ============================================================================
+-- BEFORE RUNNING:
+-- 1. Ensure setup_user_and_roles.sql has been executed
+-- 2. Ensure all search services exist (sql/search/*.sql)
+-- 3. Ensure all transform scripts have been executed (sql/transform/)
+-- 4. Run this script LAST in the deployment sequence
+--
+-- ============================================================================
 
 use role SECURITYADMIN;
 

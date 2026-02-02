@@ -1,4 +1,21 @@
--- Cortex Search service for provider directory entries.
+-- ============================================================================
+-- Cortex Search Service for Provider Directory
+-- ============================================================================
+--
+-- LEARN ABOUT THIS:
+--   📖 Search concepts: medium/claude/subarticle_1_intelligence_layer.md#search-services
+--   📚 Reference guide: docs/reference/embedding_strategy.md
+--   📚 Provider routing: docs/reference/agent_guidance.md#provider-selection
+--   📚 Agent integration: docs/reference/cortex_agent_creation.md
+--   🚀 Getting started: docs/implementation/getting-started.md
+--
+-- ============================================================================
+-- BEFORE RUNNING:
+-- 1. Ensure ANALYTICS.DIM_PROVIDER is created (run: make model)
+-- 2. Verify provider data exists: SELECT COUNT(*) FROM ANALYTICS.DIM_PROVIDER;
+-- 3. After creation, validate in Snowflake UI: SEARCH > PROVIDER_SEARCH_SVC > Playground > Search('Orthopedic Surgeon')
+--
+-- ============================================================================
 
 use role MEDICARE_POS_INTELLIGENCE;
 use database MEDICARE_POS_DB;

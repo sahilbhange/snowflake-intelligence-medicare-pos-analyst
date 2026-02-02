@@ -293,7 +293,9 @@ The **Snowflake Intelligence Medicare POS Analyst** is a complete reference impl
 - Python scripts for data ingestion
 - SQL migrations
 
-**[VIDEO: 60-second fast-forward tour of the complete system]**
+**[60-Second System Tour - Watch on YouTube](https://youtu.be/4JZUa86I3hM)**
+
+https://youtu.be/4JZUa86I3hM
 
 **GitHub:** [Link to repository](#)
 
@@ -318,7 +320,9 @@ Once deployed, Snowflake Intelligence can answer:
 **Hybrid queries (Analyst + Search):**
 - "What's the total spend on oxygen concentrators?" (Search finds codes → Analyst sums claims)
 
-**[VIDEO: 90-second demo of asking these questions in Snowflake Intelligence]**
+**[90-Second Q&A Demo - Watch on YouTube](https://youtu.be/oDwzBjjOXGE)**
+
+https://youtu.be/oDwzBjjOXGE
 
 ---
 

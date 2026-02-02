@@ -4,6 +4,25 @@ Complete this checklist before publishing any version of the semantic model to p
 
 ---
 
+## Demo Checklist (Medium Series)
+
+If you’re doing the hands-on demo (not a production release), this smaller checklist keeps the flow tight:
+
+### 1) Trust Signals
+- [ ] Run demo governance: `make governance-demo`
+- [ ] Spot-check:
+  - `GOVERNANCE.SENSITIVITY_POLICY` (what you can show/share)
+  - `GOVERNANCE.DATA_PROFILE_RESULTS` (row counts + null rates)
+
+### 2) Semantic Sanity
+- [ ] Run regression tests: `make tests`
+- [ ] Ask 3–5 “golden” questions in Cortex Analyst and confirm outputs look reasonable
+
+### 3) Upload
+- [ ] Upload YAML via `snow sql -c sf_int` PUT (or Snowsight UI)
+
+> For a demo-first rationale, see `docs/governance/governance_feasibility.md`.
+
 ## Pre-Publish Validation
 
 ### Data Quality

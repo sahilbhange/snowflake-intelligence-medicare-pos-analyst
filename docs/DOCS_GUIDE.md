@@ -258,7 +258,38 @@ SELECT * FROM TABLE(
 
 ---
 
-## Governance & Lifecycle (4 files)
+## Governance & Lifecycle (6 files)
+
+### [governance_feasibility.md](governance/governance_feasibility.md)
+**What it covers:**
+- Demo-first guidance: what to keep vs skip for the Medium walkthrough
+- What’s automated (Make targets) vs what’s still manual (tasks/alerts)
+- Upgrade path from demo governance to full governance templates
+
+**Who needs it:**
+- Anyone writing or running the Medium demo
+- Anyone deciding whether governance content is “too much”
+
+**When to use:**
+- Before adding governance steps to an article or workshop
+- When choosing between `make governance-demo` vs full governance scripts
+
+---
+
+### [data_dictionary.md](governance/data_dictionary.md)
+**What it covers:**
+- Dataset definitions, classifications, and lineage notes
+- Schema architecture (RAW → CURATED → ANALYTICS → SEARCH/INTELLIGENCE/GOVERNANCE)
+- Governance table references (metadata, profiling, quality checks)
+
+**Who needs it:**
+- Data stewards, analysts, or engineers looking for “what does this column mean?”
+
+**When to use:**
+- When validating metric definitions or interpreting fields
+- When deciding what’s safe to share (classification context)
+
+---
 
 ### [semantic_model_lifecycle.md](governance/semantic_model_lifecycle.md)
 **What it covers:**
@@ -386,6 +417,7 @@ v1.1.0 → v1.1.1: Fixed bug in calculation (PATCH bump)
 
 ### [human_validation_log.md](governance/human_validation_log.md)
 **What it covers:**
+- Demo shortcut section (15–30 min validation path)
 - Dashboard checklist (3 reference dashboards)
 - 10 golden questions with expected results
 - AI vs human comparison log (with examples)
@@ -539,9 +571,9 @@ This repo does not keep an `docs/archive/` folder. If you’re looking for older
 |----------|-------|---------------------|
 | Implementation | 3 | ~8,000 |
 | Reference | 5 | ~12,000 |
-| Governance | 5 | ~8,000 |
+| Governance | 6 | ~9,000 |
 | Navigation | 3 | ~4,000 |
-| **TOTAL** | **16** | **~32,000** |
+| **TOTAL** | **17** | **~33,000** |
 
 Plus:
 - 2 diagrams (PNG)

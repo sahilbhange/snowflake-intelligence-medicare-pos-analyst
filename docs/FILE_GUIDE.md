@@ -33,6 +33,8 @@ Complete reference for all project files and their purposes.
 
 | File | Purpose |
 |------|---------|
+| `docs/governance/governance_feasibility.md` | Demo-first guidance on what to keep/skip |
+| `docs/governance/data_dictionary.md` | Full data dictionary (demo TL;DR included) |
 | `docs/governance/semantic_model_lifecycle.md` | Model versioning and management |
 | `docs/governance/semantic_model_changelog.md` | Version history and migrations |
 | `docs/governance/semantic_publish_checklist.md` | Pre-publish validation |
@@ -80,6 +82,15 @@ Complete reference for all project files and their purposes.
 | `sql/search/cortex_search_devices.sql` | Device catalog search service | During `make search` |
 | `sql/search/cortex_search_providers.sql` | Provider directory search service | During `make search` |
 | `sql/search/cortex_search_pdf.sql` | PDF policy document search service | During `make search` (after uploading PDFs) |
+
+### Governance & Monitoring
+
+| File | Purpose | When to Run |
+|------|---------|------------|
+| `sql/governance/metadata_demo.sql` | Demo: minimal metadata + sensitivity policy | During `make governance-demo` |
+| `sql/governance/profile_demo.sql` | Demo: lightweight profiling | During `make governance-demo` |
+| `sql/governance/metadata_and_quality.sql` | Full metadata + quality scaffolding | During `make metadata` |
+| `sql/governance/run_profiling.sql` | Full profiling run | During `make profile` |
 
 ### PDF Search Setup
 

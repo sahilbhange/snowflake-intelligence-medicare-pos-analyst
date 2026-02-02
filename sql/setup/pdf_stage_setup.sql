@@ -1,5 +1,22 @@
--- PDF Stage setup for CMS policy documents.
--- Run this BEFORE creating the PDF search service.
+-- ============================================================================
+-- PDF Stage Setup: CMS Policy Documents
+-- ============================================================================
+--
+-- LEARN ABOUT THIS:
+--   📖 PDF search concepts: medium/claude/subarticle_1_intelligence_layer.md#pdf-search
+--   📚 Cortex Search stage setup: docs/reference/cortex_search_setup.md#stages
+--   📚 PDF data sources: docs/reference/pdf_sources.md
+--   📚 Stage management: docs/reference/data_stages.md
+--   🚀 Getting started: docs/implementation/getting-started.md
+--
+-- ============================================================================
+-- BEFORE RUNNING:
+-- 1. Ensure setup_user_and_roles.sql has been executed
+-- 2. Ensure MEDICARE_POS_DB database exists
+-- 3. Ensure SEARCH schema exists
+-- 4. Have CMS policy PDFs available locally (download URLs provided below)
+--
+-- ============================================================================
 
 use role MEDICARE_POS_INTELLIGENCE;
 use database MEDICARE_POS_DB;

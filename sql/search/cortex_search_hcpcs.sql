@@ -1,4 +1,21 @@
--- Cortex Search service for HCPCS code definitions.
+-- ============================================================================
+-- Cortex Search Service for HCPCS Code Definitions
+-- ============================================================================
+--
+-- LEARN ABOUT THIS:
+--   📖 Search concepts: medium/claude/subarticle_1_intelligence_layer.md#search-services
+--   📚 Reference guide: docs/reference/embedding_strategy.md
+--   📚 HCPCS codes: docs/reference/hcpcs_classification.md
+--   📚 Agent integration: docs/reference/cortex_agent_creation.md
+--   🚀 Getting started: docs/implementation/getting-started.md
+--
+-- ============================================================================
+-- BEFORE RUNNING:
+-- 1. Ensure ANALYTICS.FACT_DMEPOS_CLAIMS is created (run: make model)
+-- 2. Verify data exists: SELECT COUNT(*) FROM ANALYTICS.FACT_DMEPOS_CLAIMS;
+-- 3. After creation, validate in Snowflake UI: SEARCH > HCPCS_SEARCH_SVC > Playground > Search('Oxygen')
+--
+-- ============================================================================
 
 use role MEDICARE_POS_INTELLIGENCE;
 use database MEDICARE_POS_DB;

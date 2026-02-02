@@ -1,6 +1,23 @@
--- PDF Search service validation and testing.
--- Run this AFTER creating the PDF search service.
--- Reference: https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-search/tutorials/cortex-search-tutorial-3-chat-advanced
+-- ============================================================================
+-- PDF Search Service Validation & Testing
+-- ============================================================================
+--
+-- LEARN ABOUT THIS:
+--   📖 PDF search patterns: medium/claude/subarticle_1_intelligence_layer.md#pdf-search
+--   📚 Cortex Search API: docs/reference/cortex_search_api.md
+--   📚 RAG patterns: docs/reference/rag_patterns.md
+--   📚 Search quality metrics: docs/reference/search_validation.md
+--   🚀 Getting started: docs/implementation/getting-started.md
+--   📘 Snowflake docs: https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-search/
+--
+-- ============================================================================
+-- BEFORE RUNNING:
+-- 1. Ensure pdf_stage_setup.sql has been executed
+-- 2. Ensure cortex_search_pdf.sql has been executed and service is active
+-- 3. Verify PDFs are uploaded: LIST @SEARCH.PDF_STAGE
+-- 4. Confirm you have access to Cortex Complete function (account feature)
+--
+-- ============================================================================
 
 use role MEDICARE_POS_INTELLIGENCE;
 use database MEDICARE_POS_DB;

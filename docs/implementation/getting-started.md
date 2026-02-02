@@ -178,21 +178,26 @@ SELECT COUNT(*) FROM INTELLIGENCE.ANALYST_EVAL_SET;
 
 ### Phase 7: Metadata
 ```bash
-make metadata
+# Demo (recommended for Medium): minimal metadata + lightweight profiling
+make governance-demo
+
+# Full templates (more tables, more process)
+# make metadata
+# make profile
 ```
 **What it does:**
-- Creates `GOVERNANCE.DATASET_METADATA` table
-- Creates `GOVERNANCE.COLUMN_METADATA` table with sensitivity tags
-- Creates `GOVERNANCE.DATA_LINEAGE` table
-- Creates `GOVERNANCE.DATA_QUALITY_CHECKS` table
-- Creates `GOVERNANCE.AGENT_HINTS` table
-- Seeds metadata entries
+- Demo path (`make governance-demo`):
+  - Creates `GOVERNANCE.COLUMN_METADATA`
+  - Creates `GOVERNANCE.SENSITIVITY_POLICY` view
+  - Writes a small profiling run to `GOVERNANCE.DATA_PROFILE_RESULTS`
+- Full path (`make metadata` + `make profile`):
+  - Adds lineage, quality checks, and broader profiling coverage
 
 **Verification:**
 ```sql
-SELECT * FROM GOVERNANCE.DATASET_METADATA;
 SELECT * FROM GOVERNANCE.COLUMN_METADATA WHERE sensitivity = 'confidential';
-SELECT * FROM GOVERNANCE.AGENT_HINTS;
+SELECT * FROM GOVERNANCE.SENSITIVITY_POLICY;
+SELECT * FROM GOVERNANCE.DATA_PROFILE_RESULTS ORDER BY run_ts DESC LIMIT 50;
 ```
 
 ### Phase 8: Validation Framework
@@ -344,6 +349,10 @@ DROP DATABASE IF EXISTS MEDICARE_POS_DB;
 | `make search` | Create Cortex Search services in SEARCH schema |
 | `make instrumentation` | Create logging and eval tables in INTELLIGENCE |
 | `make metadata` | Create metadata tables in GOVERNANCE |
+| `make metadata-demo` | Demo: minimal metadata + sensitivity policy |
+| `make profile` | Run data profiling (baseline) |
+| `make profile-demo` | Demo: lightweight profiling |
+| `make governance-demo` | Demo: metadata-demo + profile-demo |
 | `make validation` | Create human validation framework in INTELLIGENCE |
 | `make tests` | Run semantic model tests |
 | `make demo` | Full demo setup (recommended) |

@@ -69,6 +69,8 @@ Model versioning, quality checks, and validation.
 
 | Document | Description | When to Use |
 |----------|-------------|-------------|
+| [Governance Feasibility (Demo-First)](governance/governance_feasibility.md) | What to keep/skip for the Medium demo; what’s automated vs manual | Before running governance steps |
+| [Data Dictionary](governance/data_dictionary.md) | Full dictionary with demo TL;DR and governance references | When you need definitions or classifications |
 | [Semantic Model Lifecycle](governance/semantic_model_lifecycle.md) | Version management process (Draft → Review → Published) | Managing model changes |
 | [Semantic Model Changelog](governance/semantic_model_changelog.md) | Version history and migration notes | Tracking what changed |
 | [Publish Checklist](governance/semantic_publish_checklist.md) | Pre-publish validation steps | Before deploying model updates |

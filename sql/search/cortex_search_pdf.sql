@@ -12,19 +12,9 @@
 -- BEFORE RUNNING:
 -- 1. Upload PDFs to @SEARCH.PDF_STAGE (run sql/setup/pdf_stage_setup.sql first)
 -- 2. Verify PDFs uploaded: LIST @SEARCH.PDF_STAGE
--- 3. Test search after creation: sql/setup/pdf_search_validation.sql
+-- 3. After creation, validate in Snowflake UI: SEARCH > PDF_SEARCH_SVC 
 --
 -- ============================================================================
-
--- Cortex Search service for CMS Policy PDF documents.
--- Reference: https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-search/tutorials/cortex-search-tutorial-3-chat-advanced
---
--- Prerequisites:
--- 1. Run sql/setup/pdf_stage_setup.sql to create stage and upload PDFs
--- 2. Verify PDFs uploaded: LIST @SEARCH.PDF_STAGE;
---
--- Post-deployment:
--- Run sql/setup/pdf_search_validation.sql to test and validate
 
 use role MEDICARE_POS_INTELLIGENCE;
 use database MEDICARE_POS_DB;

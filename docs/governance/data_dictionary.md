@@ -13,6 +13,18 @@ This data dictionary serves as the authoritative source for:
 - **Quality Metadata:** Validation rules, quality checks, profiling results
 - **Lineage Metadata:** Data sources, transformations, dependencies
 
+## Demo TL;DR (Medium Series)
+
+If you’re following the hands-on demo, you don’t need the entire document on first read. Focus on:
+
+- **Data acquisition** (what files/APIs power the demo)
+- **Schema architecture** (RAW → CURATED → ANALYTICS)
+- **Governance “trust signals”**
+  - `GOVERNANCE.SENSITIVITY_POLICY` (what’s safe to share)
+  - `GOVERNANCE.DATA_PROFILE_RESULTS` (row counts / null rates)
+
+For a minimal setup, run `make governance-demo` (runs `sql/governance/metadata_demo.sql` + `sql/governance/profile_demo.sql`).
+
 **Standards Compliance:**
 - DAMA-DMBOK 2.0 (Data Management Body of Knowledge)
 - ISO 8000-2 (Data Quality)
@@ -595,7 +607,8 @@ This data dictionary serves as the authoritative source for:
 | updated_at | TIMESTAMP_NTZ | No | Last update timestamp |
 
 **Population:**
-- Seeded by `sql/governance/metadata_and_quality.sql` (example entries)
+- Demo seed: `sql/governance/metadata_demo.sql` (small set of “talking point” columns)
+- Full seed: `sql/governance/metadata_and_quality.sql` (example entries)
 - Intended for iterative improvement as the semantic model evolves
 
 ---
@@ -679,6 +692,28 @@ This data dictionary serves as the authoritative source for:
 | metric_value | NUMBER | Yes | Numeric metric value returned by the check |
 | expected_threshold | STRING | Yes | Threshold definition (free text) |
 | notes | STRING | Yes | Optional notes |
+
+---
+
+### GOVERNANCE.DATA_PROFILE_RESULTS
+
+**Purpose:** Stores lightweight profiling metrics (row counts, null rates, distinct counts) per run
+**Classification:** Internal
+**Owner:** Data Quality Team
+
+| Column | Data Type | Nullable | Description |
+|--------|-----------|----------|-------------|
+| run_id | STRING | Yes | Run identifier (batch/job id) |
+| run_ts | TIMESTAMP_NTZ | No | Run timestamp |
+| dataset_name | STRING | Yes | Target dataset/table name |
+| column_name | STRING | Yes | Column name (null for table-level metrics) |
+| metric_name | STRING | Yes | Metric name (row_count/null_rate/etc.) |
+| metric_value | NUMBER(38,6) | Yes | Numeric metric value |
+| notes | STRING | Yes | Optional notes / expectations |
+
+**Population:**
+- Demo: `sql/governance/profile_demo.sql` (small metric set)
+- Full: `sql/governance/run_profiling.sql` (broader metric set)
 
 ---
 

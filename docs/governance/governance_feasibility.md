@@ -1,144 +1,76 @@
-# Governance Feasibility (Docs ↔ SQL) Review
+# Governance Feasibility (Demo-First)
 
-Context: Snowflake Intelligence hands-on Medium series (trust/governance layer).  
-Scope of this review: `sql/governance/*` and `docs/governance/*` (plus the Makefile targets that wire them together).
+This repo includes “production-ish” governance templates, but the Medium hands-on series works best with a **small, digestible trust layer**.
 
-## Executive Summary
+## What the demo needs (and nothing more)
 
-- **Docs and SQL are mostly aligned**: the governance docs correctly describe the intent and (most) objects created by the governance SQL.
-- **For a Medium hands-on series, this is likely “enterprise-heavy”** unless your audience is explicitly building a governance program; it reads more like a playbook/template library than a tutorial appendix.
-- **Automation is “semi-automated”**: scripts are runnable via `make metadata` and `make profile`, but ongoing operations (nightly tasks, alerts, approvals) are not automated end-to-end in this repo.
+For a demo, governance should answer two questions:
 
-## What Exists Today (Inventory)
+1. **Can I safely show/share this column?** → sensitivity policy
+2. **Is the dataset “healthy” today?** → quick profiling (row counts + null rates)
 
-### SQL (`sql/governance/`)
+Everything else (full data dictionary, long validation logs, lineage registries) is useful later, but it slows down a tutorial.
 
-- `metadata_and_quality.sql`
-  - Creates governance scaffolding tables:
-    - `GOVERNANCE.DATASET_METADATA`
-    - `GOVERNANCE.COLUMN_METADATA`
-    - `GOVERNANCE.DATA_LINEAGE`
-    - `GOVERNANCE.DATA_QUALITY_CHECKS`
-    - `GOVERNANCE.DATA_QUALITY_RESULTS`
-    - `GOVERNANCE.AGENT_HINTS`
-    - `GOVERNANCE.SENSITIVITY_POLICY` (view)
-  - Seeds a few “example” rows for datasets/columns/lineage/checks/hints.
-  - Notes: `updated_at` defaults exist, but there’s no automatic “update timestamp on change” mechanism.
+## Recommended demo workflow
 
-- `run_profiling.sql`
-  - Creates (if missing) and writes to `GOVERNANCE.DATA_PROFILE_RESULTS`.
-  - Runs a fixed set of inserts (row counts, null rates, distinct counts).
-  - Mentions a “nightly task” idea, but does not create a `TASK` itself.
+Run these after `make model` (and before/after you show Cortex Analyst):
 
-### Docs (`docs/governance/`)
+```bash
+# Minimal metadata (small table + sensitivity policy view)
+make metadata-demo
 
-- `semantic_model_lifecycle.md`
-  - Defines Draft → Review → Published → Deprecated lifecycle.
-  - References regression tests and validation artifacts (linked elsewhere in the repo).
+# Lightweight profiling (small insert set into GOVERNANCE.DATA_PROFILE_RESULTS)
+make profile-demo
 
-- `semantic_publish_checklist.md`
-  - A pre-publish checklist that references `make profile` and `make tests`.
-  - Includes a “how to PUT YAML to stage” example using `snow sql -c sf_int`.
+# Or as a single step
+make governance-demo
+```
 
-- `human_validation_log.md`
-  - A very detailed, template-style log: dashboards, golden questions, match scoring, action items.
-  - References the validation framework SQL in `sql/intelligence/` (outside this review scope, but links look consistent).
+**What you can screenshot / explain in 30 seconds:**
 
-- `semantic_model_changelog.md`
-  - A semver-style changelog template for the semantic model.
+- `GOVERNANCE.SENSITIVITY_POLICY` (how to handle `public` vs `internal` vs `confidential`)
+- `GOVERNANCE.DATA_PROFILE_RESULTS` (row counts + null rates as “trust signals”)
 
-- `data_dictionary.md`
-  - A large “enterprise-grade” data dictionary (standards, classification, retention, glossary).
-  - Includes a GOVERNANCE-layer section that documents most tables created by `metadata_and_quality.sql`.
+## What’s automated vs manual (in this repo)
 
-### Makefile wiring (important for “is this automated?”)
+### Automated (one-command repeatable)
 
-- `make metadata` runs `sql/governance/metadata_and_quality.sql`.
-- `make profile` runs `sql/governance/run_profiling.sql`.
-- These are convenient “one-command” runners, but they still require someone (or CI) to invoke them.
+- `make metadata-demo` / `make profile-demo` (demo)
+- `make metadata` / `make profile` (full templates)
 
-## Alignment Check: Docs ↔ SQL
+This is automation in the “repeatable scripts” sense.
 
-### Strong alignments
+### Still manual (left as an exercise / production add-on)
 
-- `docs/governance/data_dictionary.md` documents:
-  - `GOVERNANCE.DATASET_METADATA`, `GOVERNANCE.COLUMN_METADATA`, `GOVERNANCE.DATA_LINEAGE`,
-    `GOVERNANCE.DATA_QUALITY_CHECKS`, `GOVERNANCE.DATA_QUALITY_RESULTS`,
-    `GOVERNANCE.AGENT_HINTS`, `GOVERNANCE.SENSITIVITY_POLICY`
-  - These match what `sql/governance/metadata_and_quality.sql` creates and seeds.
+- **Scheduling** (Snowflake TASKs): profiling scripts mention “nightly”, but this repo does not create tasks.
+- **Alerting** (Slack/email): no notification wiring.
+- **Quality check runner**: `DATA_QUALITY_CHECKS.check_sql` exists in the full template, but there’s no stored procedure/task that executes each check and writes `DATA_QUALITY_RESULTS`.
+- **Human sign-off**: lifecycle/checklists are documented, not enforced by CI/CD gates.
 
-- `docs/governance/semantic_publish_checklist.md` references:
-  - `make profile` and `make tests`
-  - This matches the Makefile targets (profile is governance SQL; tests are elsewhere).
+## What we kept vs trimmed for the Medium series
 
-### Gaps / minor mismatches
+### Keep (demo core)
 
-- `GOVERNANCE.DATA_PROFILE_RESULTS` (created by `sql/governance/run_profiling.sql`) is **not described** in the GOVERNANCE section of `docs/governance/data_dictionary.md`.
-  - Impact: readers may not understand where “profiling outputs” land, or how to interpret them, when following the docs.
+- `sql/governance/metadata_demo.sql` → small `COLUMN_METADATA` + `SENSITIVITY_POLICY`
+- `sql/governance/profile_demo.sql` → small `DATA_PROFILE_RESULTS` run
+- `docs/governance/semantic_model_lifecycle.md` → lifecycle narrative (short and useful)
+- `docs/governance/semantic_publish_checklist.md` → now includes a “demo checklist” section
 
-- `sql/governance/metadata_and_quality.sql` seeds lineage paths like `sql/transform/build_curated_model.sql`.
-  - If that script name/path changes (or isn’t central to the Medium walkthrough), the lineage examples may feel out-of-date quickly.
+### Keep as “advanced templates” (optional reading)
 
-## Is This Overkill for a Hands-On Medium Series?
+- `sql/governance/metadata_and_quality.sql` (full scaffolding: lineage, checks, agent hints)
+- `sql/governance/run_profiling.sql` (bigger profiling set)
+- `docs/governance/data_dictionary.md` (large, standards-heavy reference)
+- `docs/governance/human_validation_log.md` (detailed worksheet)
 
-It depends on your target persona. For a typical “hands-on demo” audience, this is **more than needed** to successfully run the pipeline and see value from Cortex Analyst.
+## Upgrade path (when you want more than the demo)
 
-### What feels “right sized” for Medium
+When the tutorial becomes a real internal project, switch from demo targets to full targets:
 
-- Keep:
-  - `docs/governance/semantic_model_lifecycle.md` (high-level lifecycle framing)
-  - `docs/governance/semantic_publish_checklist.md` (practical checklist + the PUT step)
-  - `sql/governance/run_profiling.sql` (simple “trust signals” you can show in screenshots)
-  - A minimal slice of `metadata_and_quality.sql` (at least `COLUMN_METADATA` + `SENSITIVITY_POLICY`)
+```bash
+make metadata
+make profile
+```
 
-### What reads “enterprise template / appendix”
-
-- `docs/governance/data_dictionary.md` is comprehensive (DAMA/ISO, GDPR/HIPAA language, retention matrices).
-  - For a Medium series, this is usually best as:
-    - an appendix link (“optional, enterprise-ready template”), or
-    - trimmed down to “what tables exist + why they matter for AI reliability”.
-
-- `docs/governance/human_validation_log.md` is excellent as a template but long for a tutorial flow.
-  - Consider positioning it as a downloadable worksheet / repo artifact rather than required reading.
-
-## Manual vs Automated (Current State)
-
-### What’s automated today
-
-- **Repeatable execution is automated** via Make targets:
-  - `make metadata` → runs metadata/quality scaffolding
-  - `make profile` → runs profiling inserts
-  - This is “automation” in the sense of *one-command reproducibility*.
-
-### What’s still manual / not end-to-end automated
-
-- **Scheduling**:
-  - `sql/governance/run_profiling.sql` mentions running via a Snowflake Task, but the repo doesn’t provide the `CREATE TASK` definition (or a deploy script) for governance tasks.
-
-- **Alerting / notifications**:
-  - There’s no Slack/email integration or alert table/view that flags “bad” profiling runs.
-
-- **Data quality checks execution**:
-  - `GOVERNANCE.DATA_QUALITY_CHECKS.check_sql` stores SQL strings, but there is no runner procedure/task provided to execute each check and write `DATA_QUALITY_RESULTS` automatically.
-
-- **Approval workflows**:
-  - Docs reference roles/reviewers/stewards, but sign-off is documented as a checklist/log rather than enforced controls (no approvals gates in CI/CD, no RBAC enforcement examples for publishing).
-
-## Trimming Suggestions (If You Choose to Trim Later)
-
-No changes proposed in this commit (per request). If you decide to trim for the Medium series later, this is the cleanest “cut plan”:
-
-1. **Tier the governance story**
-   - “Core” (what the tutorial uses) vs “Advanced” (templates).
-2. **Reduce `data_dictionary.md` to a focused subset**
-   - Keep: acquisition, schemas, key tables, classifications relevant to demo.
-   - Move: full standards/compliance matrices, glossary, retention tables to an appendix or separate “enterprise template” doc.
-3. **Add one paragraph that clarifies automation**
-   - Explicitly state: “Make targets run scripts; scheduling/alerting is left to the reader.”
-
-## Bottom Line
-
-- **Aligned enough to publish**, with one notable documentation gap around `GOVERNANCE.DATA_PROFILE_RESULTS`.
-- **Likely overkill for a hands-on Medium series** unless you explicitly market it as “production-grade governance patterns”.
-- **Operationally, it’s a template-driven approach**: reproducible via Make, but ongoing governance is not fully automated (tasks, alerts, check runners would be next).
+That expands the governance surface area (lineage, quality checks table, agent hints, etc.) without changing downstream pipelines.
 
