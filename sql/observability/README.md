@@ -1,41 +1,64 @@
-# AI Observability Governance - Simplified
+# AI Observability Governance
 
-**Problem:** AI Observability events = 130 rows/question + nested JSON  
+**Problem:** AI Observability events = 130 rows/question + nested JSON
 **Solution:** View → Stored Proc → One row/question
 
----
-
-## Files (Clean)
-
-| File | Purpose |
-|------|---------|
-| `grant_privileges.sql` | Grant schema permissions (run first) |
-| `grant_ai_observability_access.sql` | Grant AI_OBSERVABILITY_EVENTS access (run second) |
-| `fix_governance_simplified.sql` | **Main file** - Creates view + stored proc |
-| `result.json` | Your AI Observability data |
-| `README.md` | This file |
+**Location:** `sql/observability/`
 
 ---
 
-## Setup (3 Steps)
+## Files (Execution Sequence)
 
-### Step 1: Grant Schema Privileges
+| # | File | Purpose | Required Role |
+|---|------|---------|---------------|
+| 1 | `01_grant_all_privileges.sql` | Grant all required privileges | ACCOUNTADMIN |
+| 2 | `02_create_governance_objects.sql` | Create table, view, stored proc | MEDICARE_POS_INTELLIGENCE |
+| 3 | `03_create_scheduled_task.sql` | **Optional** - Daily auto-population | MEDICARE_POS_INTELLIGENCE |
+| 4 | `04_create_quality_tables.sql` | Quality evaluation tables for TruLens | MEDICARE_POS_INTELLIGENCE |
+| - | `README.md` | This file | - |
+
+---
+
+## Setup (Sequential Execution)
+
+### Step 1: Grant All Privileges
 
 ```bash
-snow sql -c sf_int -f grant_privileges.sql
+snow sql -c sf_int -f 01_grant_all_privileges.sql
 ```
 
-### Step 2: Grant AI Observability Access
+Grants:
+- Schema/database usage
+- Object creation (TABLE, VIEW, PROCEDURE, TASK)
+- Warehouse usage
+- AI Observability application role
+
+### Step 2: Create Governance Objects
 
 ```bash
-snow sql -c sf_int -f grant_ai_observability_access.sql
+snow sql -c sf_int -f 02_create_governance_objects.sql
 ```
 
-### Step 3: Create View + Stored Proc
+Creates:
+- Table: `AI_AGENT_GOVERNANCE`
+- View: `V_AI_GOVERNANCE_PARAMS`
+- Stored Proc: `POPULATE_AI_GOVERNANCE()`
+
+### Step 3: Create Scheduled Task (Optional)
 
 ```bash
-snow sql -c sf_int -f fix_governance_simplified.sql
+snow sql -c sf_int -f 03_create_scheduled_task.sql
 ```
+
+Creates daily task to auto-populate governance data.
+
+### Step 4: Create Quality Evaluation Tables (Optional)
+
+```bash
+snow sql -c sf_int -f 04_create_quality_tables.sql
+```
+
+Creates tables for TruLens quality evaluation integration (see [ai_observe/README.md](../../ai_observe/README.md)).
 
 ---
 
@@ -67,7 +90,8 @@ AI_AGENT_GOVERNANCE (table: clean governance data)
 **Solution:** View consolidates 8 rows → 1 row by:
 1. **root_span CTE** → Extracts from `record_root` span (question, response, status)
 2. **planning_span CTE** → Extracts from `ResponseGeneration` span (model, tokens, SQL)
-3. **LEFT JOIN** → Combines both on trace_id
+3. **tool_span CTE** → Extracts from `Tool` spans (tools used, tool types)
+4. **LEFT JOIN** → Combines all three on trace_id
 
 **Result:** One governance record per user question with all parameters from multiple spans
 
@@ -143,17 +167,21 @@ ORDER BY query_date DESC;
 
 **Fix:**
 ```bash
-# Run grant_ai_observability_access.sql as ACCOUNTADMIN
-snow sql -c sf_int -f grant_ai_observability_access.sql
+# Re-run grants as ACCOUNTADMIN
+snow sql -c sf_int -f 01_grant_all_privileges.sql
 ```
+
+**Root cause:** Missing AI Observability application role grant
 
 ### Error: "Insufficient privileges on schema"
 
 **Fix:**
 ```bash
-# Run grant_privileges.sql as SECURITYADMIN
-snow sql -c sf_int -f grant_privileges.sql
+# Re-run grants as ACCOUNTADMIN
+snow sql -c sf_int -f 01_grant_all_privileges.sql
 ```
+
+**Root cause:** Missing schema or object creation privileges
 
 ### Check if view works
 
@@ -209,7 +237,7 @@ RECORD_ATTRIBUTES:"snow.ai.observability.agent.planning.token_count.total" = 300
 
 ## How the View Extracts Data
 
-### Two CTEs Join on trace_id
+### Three CTEs Join on trace_id
 
 ```sql
 WITH
@@ -220,16 +248,21 @@ root_span AS (
 planning_span AS (
     -- Filter: RECORD:name LIKE '%ResponseGeneration%'
     -- Extract: planning_model, tokens, SQL (from JSON array)
+),
+tool_span AS (
+    -- Filter: RECORD:name LIKE '%Tool%'
+    -- Extract: tools_used, tool_types (ARRAY_AGG)
 )
 SELECT * FROM root_span
 LEFT JOIN planning_span ON trace_id
+LEFT JOIN tool_span ON trace_id
 -- Result: 1 complete row per question
 ```
 
 ### Why This Approach?
 
-**Before fix:** Only queried `record_root` → Many NULL columns  
-**After fix:** Joins `root_span` + `planning_span` → All columns populated
+**Before fix:** Only queried `record_root` → Many NULL columns
+**After fix:** Joins `root_span` + `planning_span` + `tool_span` → All columns populated
 
 ---
 
