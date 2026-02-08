@@ -61,6 +61,9 @@ create schema if not exists MEDICARE_POS_DB.INTELLIGENCE
 create schema if not exists MEDICARE_POS_DB.GOVERNANCE
   comment = 'Metadata, lineage, data quality, agent hints';
 
+create schema if not exists MEDICARE_POS_DB.OBSERVABILITY
+  comment = 'AI Observability helper views over SNOWFLAKE.LOCAL.AI_OBSERVABILITY_EVENTS';
+
 -- 3) Grant baseline access (SECURITYADMIN)
 use role SECURITYADMIN;
 
@@ -109,6 +112,12 @@ grant select, insert, update, delete on future tables in schema MEDICARE_POS_DB.
 grant select on all views in schema MEDICARE_POS_DB.GOVERNANCE to role MEDICARE_POS_INTELLIGENCE;
 grant select on future views in schema MEDICARE_POS_DB.GOVERNANCE to role MEDICARE_POS_INTELLIGENCE;
 grant create table, create view on schema MEDICARE_POS_DB.GOVERNANCE to role MEDICARE_POS_INTELLIGENCE;
+
+-- OBSERVABILITY schema grants (views over Snowflake AI Observability events)
+grant usage on schema MEDICARE_POS_DB.OBSERVABILITY to role MEDICARE_POS_INTELLIGENCE;
+grant select on all views in schema MEDICARE_POS_DB.OBSERVABILITY to role MEDICARE_POS_INTELLIGENCE;
+grant select on future views in schema MEDICARE_POS_DB.OBSERVABILITY to role MEDICARE_POS_INTELLIGENCE;
+grant create view on schema MEDICARE_POS_DB.OBSERVABILITY to role MEDICARE_POS_INTELLIGENCE;
 
 -- Warehouse grants
 grant usage, operate on warehouse MEDICARE_POS_WH to role MEDICARE_POS_INTELLIGENCE;
